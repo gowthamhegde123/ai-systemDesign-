@@ -67,7 +67,12 @@ const BaseNode = ({ data, selected }: NodeProps) => {
             <Handle
                 type="target"
                 position={Position.Top}
-                className="w-3 h-3 !bg-primary border-2 border-background"
+                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
+            />
+            <Handle
+                type="target"
+                position={Position.Left}
+                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
             />
 
             <div className="flex items-center gap-4 relative z-10">
@@ -85,7 +90,12 @@ const BaseNode = ({ data, selected }: NodeProps) => {
             <Handle
                 type="source"
                 position={Position.Bottom}
-                className="w-3 h-3 !bg-primary border-2 border-background"
+                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
+            />
+            <Handle
+                type="source"
+                position={Position.Right}
+                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
             />
 
             {/* Selection Indicator */}

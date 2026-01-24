@@ -135,20 +135,24 @@ export const Toolbar = () => {
                                 >
                                     <div className="grid grid-cols-1 gap-1.5 py-1">
                                         {category.tools.map((tool) => (
-                                            <motion.div
+                                            <div
                                                 key={tool.type}
-                                                whileHover={{ x: 4 }}
-                                                className="flex items-center gap-3 p-2.5 bg-muted/20 rounded-xl cursor-grab hover:bg-muted/50 transition-all border border-transparent hover:border-primary/20 group"
-                                                onDragStart={(event) => onDragStart(event as any, tool.type, tool.label)}
                                                 draggable
+                                                onDragStart={(event) => onDragStart(event, tool.type, tool.label)}
+                                                className="cursor-grab"
                                             >
-                                                <div className="p-2 bg-card rounded-lg shadow-sm group-hover:shadow-md transition-shadow">
-                                                    {tool.icon}
-                                                </div>
-                                                <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground">
-                                                    {tool.label}
-                                                </span>
-                                            </motion.div>
+                                                <motion.div
+                                                    whileHover={{ x: 4 }}
+                                                    className="flex items-center gap-3 p-2.5 bg-muted/20 rounded-xl hover:bg-muted/50 transition-all border border-transparent hover:border-primary/20 group"
+                                                >
+                                                    <div className="p-2 bg-card rounded-lg shadow-sm group-hover:shadow-md transition-shadow">
+                                                        {tool.icon}
+                                                    </div>
+                                                    <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground">
+                                                        {tool.label}
+                                                    </span>
+                                                </motion.div>
+                                            </div>
                                         ))}
                                     </div>
                                 </motion.div>

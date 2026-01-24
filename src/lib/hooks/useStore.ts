@@ -93,16 +93,27 @@ export const useStore = create<AppState>((set, get) => ({
     toggleTheme: () => {
         const newTheme = get().theme === 'light' ? 'dark' : 'light';
         set({ theme: newTheme });
+
+        // Update document class for global CSS variables
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
         // Update existing edges color
         set({
             edges: get().edges.map(e => ({
                 ...e,
-                markerEnd: {
-                    ...(e.markerEnd as any),
+                markerEnd: typeof e.markerEnd === 'object' ? {
+                    ...e.markerEnd,
+                    color: newTheme === 'dark' ? '#3b82f6' : '#2563eb',
+                } : {
+                    type: MarkerType.ArrowClosed,
                     color: newTheme === 'dark' ? '#3b82f6' : '#2563eb',
                 },
                 style: {
-                    ...e.style,
+                    ...(e.style || {}),
                     stroke: newTheme === 'dark' ? '#3b82f6' : '#2563eb',
                 }
             }))

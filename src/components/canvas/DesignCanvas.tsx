@@ -34,6 +34,7 @@ const nodeTypes = {
 const DesignCanvasContent = () => {
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+    const [mounted, setMounted] = useState(false);
 
     const {
         nodes,
@@ -48,6 +49,17 @@ const DesignCanvasContent = () => {
         setEdgeType,
         clearCanvas
     } = useStore();
+
+    React.useEffect(() => {
+        setMounted(true);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
+
+    if (!mounted) return null;
 
     const onDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -102,6 +114,11 @@ const DesignCanvasContent = () => {
                     onDragOver={onDragOver}
                     fitView
                     className="bg-background"
+                    // @ts-ignore - colorMode is available in React Flow 11+ but might not be in the types
+                    colorMode={theme}
+                    connectionLineStyle={{ stroke: theme === 'dark' ? '#3b82f6' : '#2563eb', strokeWidth: 2 }}
+                    // @ts-ignore
+                    connectionLineType={edgeType}
                     defaultEdgeOptions={{
                         type: edgeType,
                         animated: true,

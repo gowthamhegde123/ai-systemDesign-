@@ -1,22 +1,103 @@
 'use client';
 
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight, Server, Shield, Zap,
   BrainCircuit, Globe, Layers, Trophy,
   MousePointer2, Sparkles, ChevronRight
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PROBLEMS } from '@/lib/data/problems';
 import { clsx } from 'clsx';
+import { useSession } from 'next-auth/react';
+import { ProfileDashboard } from '@/components/ProfileDashboard';
+import { User as UserIcon } from 'lucide-react';
 
 export default function Home() {
+  const { data: session } = useSession();
+  const [selectedProblemId, setSelectedProblemId] = useState<string>(PROBLEMS[0].id);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const selectedProblem = useMemo(() =>
+    PROBLEMS.find(p => p.id === selectedProblemId),
+    [selectedProblemId]
+  );
+
   const featuredProblems = PROBLEMS.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-accent/30">
+      {/* Navigation */}
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-6">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-2xl px-6 py-3 flex items-center justify-between shadow-2xl shadow-black/50"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <BrainCircuit className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="font-black tracking-tighter text-lg">SystemDesign.AI</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8">
+            {['Features', 'Challenges', 'About'].map((item) => (
+              <button
+                key={item}
+                onClick={() => document.getElementById(item.toLowerCase())?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          {session ? (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-3 pl-2 pr-4 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+                {session.user?.image ? (
+                  <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-4 h-4 text-primary-foreground" />
+                )}
+              </div>
+              <div className="text-left hidden sm:block">
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Profile</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[9px] font-bold text-muted-foreground leading-none truncate max-w-[80px]">
+                    {session.user?.name || 'Architect'}
+                  </p>
+                  <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md border border-accent/20">
+                    42
+                  </span>
+                </div>
+              </div>
+            </motion.button>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-primary/20"
+            >
+              Get Started
+            </Link>
+          )}
+        </motion.div>
+      </nav>
+
+      <ProfileDashboard
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+      <section id="about" className="relative pt-48 pb-32 px-6 overflow-hidden">
         {/* Animated Background Elements */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full animate-pulse" />
@@ -34,12 +115,13 @@ export default function Home() {
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-6xl md:text-8xl font-black tracking-tighter mb-8 bg-gradient-to-b from-foreground to-muted-foreground bg-clip-text text-transparent leading-[0.9]"
+            transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-7xl md:text-9xl font-black tracking-tighter mb-8 bg-gradient-to-b from-foreground via-foreground to-muted-foreground/50 bg-clip-text text-transparent leading-[0.85]"
           >
-            Master Architecture <br /> with AI Guidance.
+            Master Architecture <br />
+            <span className="text-accent">with AI Guidance.</span>
           </motion.h1>
 
           <motion.p
@@ -59,7 +141,7 @@ export default function Home() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link
-              href="/canvas/1"
+              href={session ? "/canvas/1" : "/login"}
               className="group relative px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 hover:scale-105 transition-all overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -67,7 +149,10 @@ export default function Home() {
                 Start Architecting <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </Link>
-            <button className="px-8 py-4 bg-muted hover:bg-muted/80 rounded-2xl font-black text-lg transition-all border border-border">
+            <button
+              onClick={() => document.getElementById('challenges')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-8 py-4 bg-muted hover:bg-muted/80 rounded-2xl font-black text-lg transition-all border border-border"
+            >
               View All Challenges
             </button>
           </motion.div>
@@ -75,7 +160,8 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 px-6 bg-muted/30 border-y border-border">
+      <section id="features" className="py-32 px-6 relative">
+        <div className="absolute inset-0 bg-primary/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
         <div className="container mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -114,62 +200,139 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Challenges */}
-      <section className="py-32 px-6">
+      {/* Challenge Explorer Section */}
+      <section id="challenges" className="py-32 px-6 bg-background">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Popular Challenges</h2>
-              <p className="text-muted-foreground font-medium text-lg">Start with these highly-rated system design problems.</p>
-            </div>
-            <Link href="/canvas/1" className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-sm hover:gap-4 transition-all">
-              Explore Library <ChevronRight className="w-4 h-4" />
-            </Link>
+          <div className="mb-16">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Challenge Explorer</h2>
+            <p className="text-muted-foreground font-medium text-lg">Select a system to design and view its full requirements.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {featuredProblems.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <Link
-                  href={`/canvas/${p.id}`}
-                  className="group block p-8 rounded-[2rem] bg-card border border-border hover:border-primary transition-all shadow-xl hover:shadow-primary/10 relative overflow-hidden h-full"
+          <div className="grid lg:grid-cols-12 gap-8 items-start">
+            {/* Left: Problem List */}
+            <div className="lg:col-span-4 space-y-3 h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+              {PROBLEMS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProblemId(p.id)}
+                  className={clsx(
+                    "w-full text-left p-6 rounded-2xl border transition-all group relative overflow-hidden",
+                    selectedProblemId === p.id
+                      ? "bg-primary/10 border-primary shadow-lg shadow-primary/5"
+                      : "bg-card border-border hover:border-primary/50"
+                  )}
                 >
-                  <div className="flex justify-between items-start mb-8">
-                    <div className={clsx(
-                      "p-3 rounded-2xl",
-                      p.difficulty === 'Easy' ? "bg-green-500/10 text-green-500" :
-                        p.difficulty === 'Medium' ? "bg-yellow-500/10 text-yellow-500" :
-                          "bg-red-500/10 text-red-500"
-                    )}>
-                      {p.difficulty === 'Easy' ? <Zap className="w-6 h-6" /> :
-                        p.difficulty === 'Medium' ? <Layers className="w-6 h-6" /> :
-                          <Server className="w-6 h-6" />}
-                    </div>
+                  <div className="flex justify-between items-center mb-2">
                     <span className={clsx(
-                      "px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border",
-                      p.difficulty === 'Easy' ? "border-green-500/20 text-green-500" :
-                        p.difficulty === 'Medium' ? "border-yellow-500/20 text-yellow-500" :
-                          "border-red-500/20 text-red-500"
+                      "text-[10px] font-black uppercase tracking-widest",
+                      p.difficulty === 'Easy' ? "text-green-500" :
+                        p.difficulty === 'Medium' ? "text-yellow-500" :
+                          "text-red-500"
                     )}>
                       {p.difficulty}
                     </span>
+                    {selectedProblemId === p.id && (
+                      <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    )}
                   </div>
-                  <h3 className="text-2xl font-black mb-4 group-hover:text-primary transition-colors">{p.title}</h3>
-                  <p className="text-muted-foreground font-medium text-sm mb-8 leading-relaxed">
-                    {p.description}
-                  </p>
-                  <div className="flex items-center text-sm font-black uppercase tracking-widest text-primary mt-auto">
-                    Start Challenge <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  <h3 className="font-black text-lg group-hover:text-primary transition-colors">{p.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">{p.category}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Right: Problem Details */}
+            <div className="lg:col-span-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedProblemId}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="bg-card border border-border rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden min-h-[600px] flex flex-col"
+                >
+                  {/* Decorative Background */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full -mr-32 -mt-32" />
+
+                  {selectedProblem ? (
+                    <>
+                      <div className="relative z-10 flex-grow">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className={clsx(
+                            "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border",
+                            selectedProblem.difficulty === 'Easy' ? "border-green-500/20 text-green-500 bg-green-500/5" :
+                              selectedProblem.difficulty === 'Medium' ? "border-yellow-500/20 text-yellow-500 bg-yellow-500/5" :
+                                "border-red-500/20 text-red-500 bg-red-500/5"
+                          )}>
+                            {selectedProblem.difficulty}
+                          </div>
+                          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            {selectedProblem.category}
+                          </span>
+                        </div>
+
+                        <h3 className="text-4xl font-black mb-6 tracking-tight">{selectedProblem.title}</h3>
+                        <p className="text-lg text-muted-foreground mb-10 font-medium leading-relaxed">
+                          {selectedProblem.description}
+                        </p>
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div>
+                            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                              Functional Requirements
+                            </h4>
+                            <ul className="space-y-4">
+                              {selectedProblem.requirements.map((r, i) => (
+                                <li key={i} className="flex gap-3 text-sm font-medium text-foreground/80">
+                                  <ChevronRight className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                                  {r}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                              Constraints & Scale
+                            </h4>
+                            <ul className="space-y-4">
+                              {selectedProblem.constraints.map((c, i) => (
+                                <li key={i} className="flex gap-3 text-sm font-medium text-foreground/80">
+                                  <ArrowRight className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                                  {c}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-12 pt-8 border-t border-border flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <BrainCircuit className="w-5 h-5" />
+                          <span className="text-xs font-bold uppercase tracking-widest">AI Evaluation Ready</span>
+                        </div>
+                        <Link
+                          href={`/canvas/${selectedProblem.id}`}
+                          className="group px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                          Start Architecting <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center">
+                      <div className="w-20 h-20 bg-muted rounded-3xl flex items-center justify-center mb-6">
+                        <Layers className="w-10 h-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-xl font-black mb-2">Select a Challenge</h3>
+                      <p className="text-muted-foreground font-medium">Choose a problem from the list to view its details.</p>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </section>
