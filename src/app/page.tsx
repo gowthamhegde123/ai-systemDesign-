@@ -43,13 +43,24 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            {['Features', 'Challenges', 'About'].map((item) => (
+            {[
+              { name: 'Features', id: 'features' },
+              { name: 'Questions', href: '/questions' },
+              { name: 'Challenges', id: 'challenges' },
+              { name: 'About', id: 'about' }
+            ].map((item) => (
               <button
-                key={item}
-                onClick={() => document.getElementById(item.toLowerCase())?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                key={item.name}
+                onClick={() => {
+                  if (item.href) {
+                    window.location.href = item.href;
+                  } else if (item.id) {
+                    document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors cursor-pointer"
               >
-                {item}
+                {item.name}
               </button>
             ))}
           </div>
@@ -61,24 +72,26 @@ export default function Home() {
               onClick={() => setIsProfileOpen(true)}
               className="flex items-center gap-3 pl-2 pr-4 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all group"
             >
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
-                {session.user?.image ? (
-                  <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <UserIcon className="w-4 h-4 text-primary-foreground" />
-                )}
-              </div>
-              <div className="text-left hidden sm:block">
-                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Profile</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-[9px] font-bold text-muted-foreground leading-none truncate max-w-[80px]">
-                    {session.user?.name || 'Architect'}
-                  </p>
-                  <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md border border-accent/20">
-                    42
-                  </span>
+              <Link href="/profile" className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+                  {session.user?.image ? (
+                    <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-4 h-4 text-primary-foreground" />
+                  )}
                 </div>
-              </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Profile</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[9px] font-bold text-muted-foreground leading-none truncate max-w-[80px]">
+                      {session.user?.name || 'Architect'}
+                    </p>
+                    <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md border border-accent/20">
+                      42
+                    </span>
+                  </div>
+                </div>
+              </Link>
             </motion.button>
           ) : (
             <Link
@@ -130,7 +143,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
-            Practice designing scalable systems on a professional canvas.
+            Practice designing scalable systems with 29 curated questions on a professional canvas.
             Get instant, high-fidelity feedback from our AI architect on your designs.
           </motion.p>
 
@@ -177,8 +190,8 @@ export default function Home() {
               },
               {
                 icon: <Trophy className="w-8 h-8 text-yellow-500" />,
-                title: "300+ Problems",
-                desc: "A vast library of real-world system design challenges from top tech companies."
+                title: "29 Curated Questions",
+                desc: "Comprehensive system design questions across 10 categories with detailed requirements and learning outcomes."
               }
             ].map((feature, i) => (
               <motion.div
@@ -197,6 +210,180 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* System Design Questions Section */}
+      <section className="py-32 px-6 bg-muted/30 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-blue-500/5" />
+        <div className="container mx-auto relative">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-black uppercase tracking-widest mb-8"
+            >
+              <BrainCircuit className="w-4 h-4" />
+              <span>System Design Mastery</span>
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-6xl font-black tracking-tight mb-6"
+            >
+              29 Curated Questions
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed"
+            >
+              Master system design with carefully curated questions from industry experts. 
+              Each question includes detailed requirements, learning outcomes, and recommended tech stacks.
+            </motion.p>
+          </div>
+
+          {/* Categories Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {[
+              {
+                title: "Storage & Databases",
+                count: 5,
+                description: "Distributed caches, KV stores, and database systems",
+                icon: <Server className="w-6 h-6" />,
+                color: "from-blue-500 to-cyan-500",
+                examples: ["Distributed Cache", "Superfast KV Store", "S3 Design"]
+              },
+              {
+                title: "Real-time Systems",
+                count: 3,
+                description: "Live updates, presence, and real-time communication",
+                icon: <Zap className="w-6 h-6" />,
+                color: "from-yellow-500 to-orange-500",
+                examples: ["Live Commentary", "Online Indicators", "Real-time Claps"]
+              },
+              {
+                title: "Infrastructure",
+                count: 4,
+                description: "Load balancers, schedulers, and core infrastructure",
+                icon: <Layers className="w-6 h-6" />,
+                color: "from-purple-500 to-pink-500",
+                examples: ["Load Balancer", "Task Scheduler", "Message Broker"]
+              },
+              {
+                title: "Content & Media",
+                count: 3,
+                description: "Image processing, video pipelines, and content delivery",
+                icon: <Globe className="w-6 h-6" />,
+                color: "from-green-500 to-teal-500",
+                examples: ["Image Service", "Video Pipeline", "Blogging Platform"]
+              },
+              {
+                title: "Search & Discovery",
+                count: 3,
+                description: "Search engines, indexing, and discovery systems",
+                icon: <BrainCircuit className="w-6 h-6" />,
+                color: "from-indigo-500 to-blue-500",
+                examples: ["Search Engine", "Word Dictionary", "Recent Searches"]
+              },
+              {
+                title: "E-commerce & Business",
+                count: 3,
+                description: "Flash sales, analytics, and business-critical systems",
+                icon: <Trophy className="w-6 h-6" />,
+                color: "from-red-500 to-pink-500",
+                examples: ["Flash Sale", "Impression Counting", "Airline Check-in"]
+              }
+            ].map((category, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative overflow-hidden"
+              >
+                <Link
+                  href={`/questions?category=${encodeURIComponent(category.title)}`}
+                  className="block p-8 rounded-3xl bg-card border border-border shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                >
+                  {/* Gradient Background */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                  
+                  {/* Icon */}
+                  <div className={`mb-6 p-4 rounded-2xl bg-gradient-to-br ${category.color} text-white w-fit group-hover:scale-110 transition-transform duration-300`}>
+                    {category.icon}
+                  </div>
+
+                  {/* Content */}
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xl font-black group-hover:text-primary transition-colors">
+                        {category.title}
+                      </h3>
+                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold">
+                        {category.count}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
+                      {category.description}
+                    </p>
+                    
+                    {/* Examples */}
+                    <div className="space-y-2">
+                      {category.examples.map((example, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                          <span className="font-medium">{example}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hover Arrow */}
+                  <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <ArrowRight className="w-5 h-5 text-primary" />
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Stats and CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+              {[
+                { label: "Total Questions", value: "29" },
+                { label: "Categories", value: "10" },
+                { label: "Difficulty Levels", value: "3" },
+                { label: "Avg. Time", value: "5-7h" }
+              ].map((stat, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-3xl font-black text-primary mb-2">{stat.value}</div>
+                  <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href="/questions"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+            >
+              <span>Explore All Questions</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </motion.div>
         </div>
       </section>
 

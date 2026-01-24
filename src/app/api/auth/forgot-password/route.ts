@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import nodemailer from 'nodemailer';
 
 export async function POST(req: Request) {
     try {
@@ -33,38 +32,46 @@ export async function POST(req: Request) {
             expires_at: expiresAt.toISOString(),
         });
 
-        // Send email
-        if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-            const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST || 'smtp.gmail.com',
-                port: Number(process.env.SMTP_PORT) || 587,
-                secure: false,
-                auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS,
-                },
-            });
+        // Send email with Formspree (instant delivery)
+        if (process.env.FORMSPREE_FORM_ID) {
+            try {
+                const formspreeResponse = await fetch(`https://formspree.io/f/${process.env.FORMSPREE_FORM_ID}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        subject: 'Your Password Reset Code - SystemDesign.AI',
+                        message: `Your password reset code is: ${code}. This code will expire in 10 minutes.`,
+                        _replyto: email,
+                        _subject: 'Password Reset Code',
+                        _template: 'table',
+                        code: code,
+                        app_name: 'SystemDesign.AI'
+                    }),
+                });
 
-            await transporter.sendMail({
-                from: '"SystemDesign.AI" <noreply@systemdesign.ai>',
-                to: email,
-                subject: "Your Password Reset Code",
-                text: `Your reset code is: ${code}. It expires in 10 minutes.`,
-                html: `
-                    <div style="font-family: sans-serif; padding: 20px; background-color: #0a0a0c; color: #ffffff;">
-                        <div style="max-width: 600px; margin: auto; background-color: #161618; padding: 40px; border-radius: 24px; border: 1px solid #27272a;">
-                            <h2 style="color: #7c3aed; margin-bottom: 20px; font-weight: 900; letter-spacing: -0.05em;">Password Reset</h2>
-                            <p style="font-size: 16px; color: #a1a1aa;">You requested a password reset for your SystemDesign.AI account.</p>
-                            <div style="background-color: #27272a; padding: 30px; border-radius: 16px; text-align: center; margin: 30px 0; border: 1px solid #3f3f46;">
-                                <span style="font-size: 36px; font-weight: 900; letter-spacing: 12px; color: #ffffff;">${code}</span>
-                            </div>
-                            <p style="font-size: 14px; color: #71717a;">This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
-                        </div>
-                    </div>
-                `
-            });
+                if (formspreeResponse.ok) {
+                    console.log('Email sent successfully via Formspree');
+                } else {
+                    console.error('Formspree email failed:', await formspreeResponse.text());
+                    console.log('Reset code for development:', code);
+                }
+            } catch (emailError) {
+                console.error('Formspree request failed:', emailError);
+                console.log('Reset code for development:', code);
+            }
         } else {
-            console.warn('SMTP credentials missing. Reset code logged to console for development:', code);
+            console.warn('FORMSPREE_FORM_ID missing. Reset code logged to console:', code);
+            // For development - also return code in response (remove in production!)
+            if (process.env.NODE_ENV === 'development') {
+                return NextResponse.json({ 
+                    message: 'Reset code generated (check console for code)', 
+                    devCode: code, // Only in development
+                    success: true
+                });
+            }
         }
 
         return NextResponse.json({ message: 'Reset code sent' });

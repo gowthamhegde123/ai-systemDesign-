@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Camera, Shield, Award,
-    CheckCircle2, Lock, Mail, X,
-    LogOut, Settings, ChevronRight,
+    Lock, X, LogOut, Settings, ChevronRight,
     Zap, BrainCircuit, Sparkles
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import { clsx } from 'clsx';
+import Link from 'next/link';
+import ActivityGrid from './ActivityGrid';
+import { useUserProgress } from '@/lib/hooks/useUserProgress';
 
 interface ProfileDashboardProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ interface ProfileDashboardProps {
 
 export function ProfileDashboard({ isOpen, onClose }: ProfileDashboardProps) {
     const { data: session } = useSession();
+    const { progress } = useUserProgress();
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [step, setStep] = useState<'otp' | 'new-password'>('otp');
@@ -112,13 +114,13 @@ export function ProfileDashboard({ isOpen, onClose }: ProfileDashboardProps) {
                                     </div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Solved Problems</p>
                                     <div className="flex items-end gap-2 mb-4">
-                                        <span className="text-3xl font-black leading-none">42</span>
-                                        <span className="text-xs font-bold text-muted-foreground mb-1">/ 150</span>
+                                        <span className="text-3xl font-black leading-none">{progress?.totalSolved || 0}</span>
+                                        <span className="text-xs font-bold text-muted-foreground mb-1">/ 29</span>
                                     </div>
                                     <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: '28%' }}
+                                            animate={{ width: `${Math.min(((progress?.totalSolved || 0) / 29) * 100, 100)}%` }}
                                             className="h-full bg-primary rounded-full"
                                         />
                                     </div>
@@ -127,12 +129,25 @@ export function ProfileDashboard({ isOpen, onClose }: ProfileDashboardProps) {
                                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
                                         <Zap className="w-12 h-12 text-accent" />
                                     </div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Current Rank</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Current Streak</p>
                                     <div className="flex items-end gap-2">
-                                        <span className="text-3xl font-black leading-none text-accent">Pro</span>
+                                        <span className="text-3xl font-black leading-none text-accent">{progress?.currentStreak || 0}</span>
+                                        <span className="text-xs font-bold text-muted-foreground mb-1">days</span>
                                     </div>
-                                    <p className="text-[10px] font-bold text-muted-foreground mt-4 uppercase tracking-widest">Top 5% of Users</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-4 uppercase tracking-widest">Keep it up!</p>
                                 </div>
+                            </div>
+
+                            {/* Activity Grid */}
+                            <div className="mb-12">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <BrainCircuit className="w-3 h-3 text-primary" />
+                                        Activity Overview
+                                    </h4>
+                                    <span className="text-[9px] font-bold text-muted-foreground">Last 12 months</span>
+                                </div>
+                                <ActivityGrid />
                             </div>
 
                             {/* Skills Section */}
@@ -155,13 +170,29 @@ export function ProfileDashboard({ isOpen, onClose }: ProfileDashboardProps) {
 
                             {/* Security Actions */}
                             <div className="space-y-3 mb-12">
-                                <button
-                                    onClick={() => setShowOTPModal(true)}
+                                <Link
+                                    href="/profile"
                                     className="w-full flex items-center justify-between p-5 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-2xl group transition-all"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="p-2 bg-primary/20 rounded-lg group-hover:scale-110 transition-transform">
-                                            <Lock className="w-4 h-4 text-primary" />
+                                            <User className="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-xs font-black uppercase tracking-widest">View Full Profile</p>
+                                            <p className="text-[10px] text-muted-foreground font-medium">Complete profile with achievements</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                </Link>
+
+                                <button
+                                    onClick={() => setShowOTPModal(true)}
+                                    className="w-full flex items-center justify-between p-5 bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-2xl group transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 bg-muted rounded-lg group-hover:scale-110 transition-transform">
+                                            <Lock className="w-4 h-4 text-muted-foreground" />
                                         </div>
                                         <div className="text-left">
                                             <p className="text-xs font-black uppercase tracking-widest">Change Password</p>
