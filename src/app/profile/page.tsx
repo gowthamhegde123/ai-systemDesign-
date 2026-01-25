@@ -6,12 +6,13 @@ import {
     User, Camera, Shield, Award, Trophy, Target, Zap, BrainCircuit, 
     Sparkles, Calendar, Clock, TrendingUp, Star, Medal, Crown,
     CheckCircle2, Lock, Mail, Settings, ChevronRight, ArrowLeft,
-    Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, X
+    Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, X, LogOut
 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { clsx } from 'clsx';
 import Link from 'next/link';
 import ActivityGrid from '@/components/ActivityGrid';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { useUserProgress } from '@/lib/hooks/useUserProgress';
 
 export default function ProfilePage() {
@@ -19,6 +20,50 @@ export default function ProfilePage() {
     const { progress } = useUserProgress();
     const [isEditing, setIsEditing] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'achievements' | 'settings'>('overview');
+    const [profileData, setProfileData] = useState({
+        name: session?.user?.name || 'System Architect',
+        role: 'Senior System Design Engineer',
+        location: 'San Francisco, CA',
+        bio: 'Passionate system architect with 8+ years of experience designing scalable distributed systems. Love solving complex problems and building high-performance applications.',
+        socialLinks: {
+            github: 'https://github.com/gowthamhegde123',
+            twitter: 'https://twitter.com/gowthamhegde',
+            linkedin: 'https://linkedin.com/in/gowthamhegde',
+            website: 'https://gowthamhegde.dev'
+        },
+        avatar: session?.user?.image || ''
+    });
+
+    const handleSaveProfile = () => {
+        // In a real app, this would save to the database
+        console.log('Saving profile data:', profileData);
+        setIsEditing(false);
+        // You could add an API call here to save the data
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        setProfileData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleSocialLinkChange = (platform: string, value: string) => {
+        setProfileData(prev => ({
+            ...prev,
+            socialLinks: {
+                ...prev.socialLinks,
+                [platform]: value
+            }
+        }));
+    };
+
+    const handleAvatarChange = (imageUrl: string) => {
+        setProfileData(prev => ({
+            ...prev,
+            avatar: imageUrl
+        }));
+    };
 
     if (!session) {
         return (
@@ -41,16 +86,100 @@ export default function ProfilePage() {
     }
 
     const achievements = [
-        { id: 1, title: 'First Steps', description: 'Solved your first system design problem', icon: <Target className="w-6 h-6" />, unlocked: true, date: '2024-01-15' },
-        { id: 2, title: 'Problem Solver', description: 'Solved 5 system design problems', icon: <CheckCircle2 className="w-6 h-6" />, unlocked: true, date: '2024-01-20' },
-        { id: 3, title: 'Architect', description: 'Solved 10 system design problems', icon: <BrainCircuit className="w-6 h-6" />, unlocked: true, date: '2024-02-01' },
-        { id: 4, title: 'System Master', description: 'Solved 15 system design problems', icon: <Award className="w-6 h-6" />, unlocked: true, date: '2024-02-15' },
-        { id: 5, title: 'Design Expert', description: 'Solved 20 system design problems', icon: <Trophy className="w-6 h-6" />, unlocked: false, date: null },
-        { id: 6, title: 'Streak Master', description: 'Maintain a 7-day solving streak', icon: <Zap className="w-6 h-6" />, unlocked: true, date: '2024-03-01' },
-        { id: 7, title: 'Speed Demon', description: 'Solve 3 problems in one day', icon: <TrendingUp className="w-6 h-6" />, unlocked: false, date: null },
-        { id: 8, title: 'Perfectionist', description: 'Get 100% score on 5 problems', icon: <Star className="w-6 h-6" />, unlocked: false, date: null },
-        { id: 9, title: 'Category Master', description: 'Solve problems from all categories', icon: <Medal className="w-6 h-6" />, unlocked: false, date: null },
-        { id: 10, title: 'Legend', description: 'Solve all 29 system design problems', icon: <Crown className="w-6 h-6" />, unlocked: false, date: null },
+        { 
+            id: 1, 
+            title: 'First Steps', 
+            description: 'Solved your first system design problem', 
+            icon: <Target className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 1, 
+            date: (progress?.totalSolved || 0) >= 1 ? '2024-01-15' : null,
+            threshold: 1
+        },
+        { 
+            id: 2, 
+            title: 'Problem Solver', 
+            description: 'Solved 5 system design problems', 
+            icon: <CheckCircle2 className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 5, 
+            date: (progress?.totalSolved || 0) >= 5 ? '2024-01-20' : null,
+            threshold: 5
+        },
+        { 
+            id: 3, 
+            title: 'Architect', 
+            description: 'Solved 10 system design problems', 
+            icon: <BrainCircuit className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 10, 
+            date: (progress?.totalSolved || 0) >= 10 ? '2024-02-01' : null,
+            threshold: 10
+        },
+        { 
+            id: 4, 
+            title: 'System Master', 
+            description: 'Solved 15 system design problems', 
+            icon: <Award className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 15, 
+            date: (progress?.totalSolved || 0) >= 15 ? '2024-02-15' : null,
+            threshold: 15
+        },
+        { 
+            id: 5, 
+            title: 'Design Expert', 
+            description: 'Solved 20 system design problems', 
+            icon: <Trophy className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 20, 
+            date: (progress?.totalSolved || 0) >= 20 ? '2024-02-20' : null,
+            threshold: 20
+        },
+        { 
+            id: 6, 
+            title: 'Streak Master', 
+            description: 'Maintain a 7-day solving streak', 
+            icon: <Zap className="w-6 h-6" />, 
+            unlocked: (progress?.currentStreak || 0) >= 7, 
+            date: (progress?.currentStreak || 0) >= 7 ? '2024-03-01' : null,
+            threshold: 7,
+            type: 'streak'
+        },
+        { 
+            id: 7, 
+            title: 'Speed Demon', 
+            description: 'Solve 3 problems in one day', 
+            icon: <TrendingUp className="w-6 h-6" />, 
+            unlocked: false, 
+            date: null,
+            threshold: 3,
+            type: 'daily'
+        },
+        { 
+            id: 8, 
+            title: 'Perfectionist', 
+            description: 'Get 100% score on 5 problems', 
+            icon: <Star className="w-6 h-6" />, 
+            unlocked: false, 
+            date: null,
+            threshold: 5,
+            type: 'score'
+        },
+        { 
+            id: 9, 
+            title: 'Category Master', 
+            description: 'Solve problems from all categories', 
+            icon: <Medal className="w-6 h-6" />, 
+            unlocked: false, 
+            date: null,
+            threshold: 10,
+            type: 'category'
+        },
+        { 
+            id: 10, 
+            title: 'Legend', 
+            description: 'Solve all 29 system design problems', 
+            icon: <Crown className="w-6 h-6" />, 
+            unlocked: (progress?.totalSolved || 0) >= 29, 
+            date: (progress?.totalSolved || 0) >= 29 ? '2024-03-15' : null,
+            threshold: 29
+        },
     ];
 
     const skillCategories = [
@@ -109,13 +238,23 @@ export default function ProfilePage() {
                             <div className="w-px h-6 bg-border" />
                             <h1 className="text-lg font-black tracking-tight">Profile</h1>
                         </div>
-                        <button
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-medium transition-colors"
-                        >
-                            {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                            {isEditing ? 'Save Changes' : 'Edit Profile'}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={isEditing ? handleSaveProfile : () => setIsEditing(!isEditing)}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-medium transition-colors"
+                            >
+                                {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                                {isEditing ? 'Save Changes' : 'Edit Profile'}
+                            </button>
+                            <button
+                                onClick={() => signOut({ callbackUrl: '/' })}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl font-medium transition-colors"
+                                title="Sign Out"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span className="hidden sm:inline">Sign Out</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,60 +270,100 @@ export default function ProfilePage() {
                             className="bg-card border border-border rounded-3xl p-8 shadow-xl"
                         >
                             <div className="text-center">
-                                <div className="relative group mb-6">
-                                    <div className="w-32 h-32 rounded-full border-4 border-primary/20 p-1 relative overflow-hidden mx-auto">
-                                        <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                                            {session.user?.image ? (
-                                                <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <User className="w-12 h-12 text-muted-foreground" />
-                                            )}
-                                        </div>
-                                    </div>
-                                    {isEditing && (
-                                        <button className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                                            <Camera className="w-6 h-6 text-white" />
-                                            <span className="text-xs font-bold uppercase text-white tracking-widest">Update</span>
-                                        </button>
-                                    )}
-                                </div>
+                                <AvatarUpload
+                                    currentImage={profileData.avatar}
+                                    onImageChange={handleAvatarChange}
+                                    isEditing={isEditing}
+                                />
                                 
-                                <h2 className="text-2xl font-black tracking-tight mb-2">{session.user?.name || 'System Architect'}</h2>
-                                <p className="text-muted-foreground font-medium mb-4">Senior System Design Engineer</p>
+                                <h2 className="text-2xl font-black tracking-tight mb-2">
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={profileData.name}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                            className="bg-transparent border-b-2 border-primary/30 focus:border-primary outline-none text-2xl font-black tracking-tight"
+                                        />
+                                    ) : (
+                                        profileData.name
+                                    )}
+                                </h2>
+                                <p className="text-muted-foreground font-medium mb-4">
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={profileData.role}
+                                            onChange={(e) => handleInputChange('role', e.target.value)}
+                                            className="bg-transparent border-b border-primary/30 focus:border-primary outline-none w-full"
+                                        />
+                                    ) : (
+                                        profileData.role
+                                    )}
+                                </p>
                                 
                                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-6">
                                     <MapPin className="w-4 h-4" />
-                                    <span>San Francisco, CA</span>
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={profileData.location}
+                                            onChange={(e) => handleInputChange('location', e.target.value)}
+                                            className="bg-transparent border-b border-primary/30 focus:border-primary outline-none"
+                                        />
+                                    ) : (
+                                        <span>{profileData.location}</span>
+                                    )}
                                 </div>
 
                                 {/* Social Links */}
                                 <div className="flex justify-center gap-3 mb-6">
                                     {[
-                                        { icon: <Github className="w-4 h-4" />, href: '#', label: 'GitHub' },
-                                        { icon: <Twitter className="w-4 h-4" />, href: '#', label: 'Twitter' },
-                                        { icon: <Linkedin className="w-4 h-4" />, href: '#', label: 'LinkedIn' },
-                                        { icon: <Globe className="w-4 h-4" />, href: '#', label: 'Website' },
+                                        { icon: <Github className="w-4 h-4" />, key: 'github', label: 'GitHub' },
+                                        { icon: <Twitter className="w-4 h-4" />, key: 'twitter', label: 'Twitter' },
+                                        { icon: <Linkedin className="w-4 h-4" />, key: 'linkedin', label: 'LinkedIn' },
+                                        { icon: <Globe className="w-4 h-4" />, key: 'website', label: 'Website' },
                                     ].map((social, index) => (
-                                        <a
-                                            key={index}
-                                            href={social.href}
-                                            className="p-2 bg-muted/50 hover:bg-primary/10 rounded-xl transition-colors group"
-                                            title={social.label}
-                                        >
-                                            <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                                                {social.icon}
-                                            </div>
-                                        </a>
+                                        <div key={index} className="relative group">
+                                            {isEditing ? (
+                                                <input
+                                                    type="url"
+                                                    value={profileData.socialLinks[social.key as keyof typeof profileData.socialLinks]}
+                                                    onChange={(e) => handleSocialLinkChange(social.key, e.target.value)}
+                                                    placeholder={`${social.label} URL`}
+                                                    className="w-20 p-2 bg-muted/50 border border-border rounded-xl text-xs focus:border-primary outline-none"
+                                                />
+                                            ) : (
+                                                <a
+                                                    href={profileData.socialLinks[social.key as keyof typeof profileData.socialLinks]}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 bg-muted/50 hover:bg-primary/10 rounded-xl transition-colors group"
+                                                    title={social.label}
+                                                >
+                                                    <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                                                        {social.icon}
+                                                    </div>
+                                                </a>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
 
                                 {/* Bio */}
                                 <div className="text-left">
                                     <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3">About</h3>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Passionate system architect with 8+ years of experience designing scalable distributed systems. 
-                                        Love solving complex problems and building high-performance applications.
-                                    </p>
+                                    {isEditing ? (
+                                        <textarea
+                                            value={profileData.bio}
+                                            onChange={(e) => handleInputChange('bio', e.target.value)}
+                                            rows={4}
+                                            className="w-full text-sm bg-muted/30 border border-border rounded-xl p-3 focus:border-primary outline-none resize-none"
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {profileData.bio}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>
@@ -446,6 +625,57 @@ export default function ProfilePage() {
                                                     </button>
                                                 </div>
                                             ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Account Actions */}
+                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
+                                        <h3 className="text-xl font-black tracking-tight mb-6">Account Actions</h3>
+                                        <div className="space-y-4">
+                                            {/* Change Password */}
+                                            <button className="w-full flex items-center justify-between p-5 bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-2xl group transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-2 bg-muted rounded-lg group-hover:scale-110 transition-transform">
+                                                        <Lock className="w-4 h-4 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-foreground">Change Password</p>
+                                                        <p className="text-sm text-muted-foreground">Update your account password</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                            </button>
+
+                                            {/* Export Data */}
+                                            <button className="w-full flex items-center justify-between p-5 bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-2xl group transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-2 bg-muted rounded-lg group-hover:scale-110 transition-transform">
+                                                        <Shield className="w-4 h-4 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-foreground">Export Data</p>
+                                                        <p className="text-sm text-muted-foreground">Download your progress and data</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                            </button>
+
+                                            {/* Logout Button */}
+                                            <button
+                                                onClick={() => signOut({ callbackUrl: '/' })}
+                                                className="w-full flex items-center justify-between p-5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-2xl group transition-all"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-2 bg-red-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                                                        <LogOut className="w-4 h-4 text-red-500" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-red-500">Sign Out</p>
+                                                        <p className="text-sm text-muted-foreground">End your current session</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-red-500/70 group-hover:translate-x-1 transition-transform" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
