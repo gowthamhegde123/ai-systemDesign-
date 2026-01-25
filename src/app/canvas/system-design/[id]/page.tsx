@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DesignCanvas } from '@/components/canvas/DesignCanvas';
 import { useStore } from '@/lib/hooks/useStore';
@@ -8,7 +8,7 @@ import { useUserProgress } from '@/lib/hooks/useUserProgress';
 import { SystemDesignQuestion } from '@/lib/data/system-design-questions';
 import { AIAnalysisResult } from '@/types';
 import {
-    Play, CheckCircle, AlertCircle, Loader2,
+    Play, CheckCircle2, AlertCircle, Loader2,
     ChevronLeft, Send, Search as SearchIcon,
     Trophy, Sparkles, BrainCircuit, History,
     ArrowRight, Info, Maximize, Clock, Users, Code, Target, Lightbulb, Wrench
@@ -399,7 +399,7 @@ export default function SystemDesignCanvas() {
                     "p-3 rounded-2xl shadow-inner",
                     result.status === 'Pass' ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
                   )}>
-                    {result.status === 'Pass' ? <CheckCircle className="w-7 h-7" /> : <AlertCircle className="w-7 h-7" />}
+                    {result.status === 'Pass' ? <CheckCircle2 className="w-7 h-7" /> : <AlertCircle className="w-7 h-7" />}
                   </div>
                   <div className="flex-grow">
                     <h3 className="font-black text-xl leading-none tracking-tight">
