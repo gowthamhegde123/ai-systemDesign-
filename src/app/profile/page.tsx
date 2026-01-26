@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-    User, Camera, Shield, Award, Trophy, Target, Zap, BrainCircuit, 
+    User, Camera, Shield, Award, Trophy, Target, Zap, BrainCircuit,
     Sparkles, Calendar, Clock, TrendingUp, Star, Medal, Crown,
     CheckCircle2, Lock, Mail, Settings, ChevronRight, ArrowLeft,
     Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, X, LogOut
@@ -86,97 +86,97 @@ export default function ProfilePage() {
     }
 
     const achievements = [
-        { 
-            id: 1, 
-            title: 'First Steps', 
-            description: 'Solved your first system design problem', 
-            icon: <Target className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 1, 
+        {
+            id: 1,
+            title: 'First Steps',
+            description: 'Solved your first system design problem',
+            icon: <Target className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 1,
             date: (progress?.totalSolved || 0) >= 1 ? '2024-01-15' : null,
             threshold: 1
         },
-        { 
-            id: 2, 
-            title: 'Problem Solver', 
-            description: 'Solved 5 system design problems', 
-            icon: <CheckCircle2 className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 5, 
+        {
+            id: 2,
+            title: 'Problem Solver',
+            description: 'Solved 5 system design problems',
+            icon: <CheckCircle2 className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 5,
             date: (progress?.totalSolved || 0) >= 5 ? '2024-01-20' : null,
             threshold: 5
         },
-        { 
-            id: 3, 
-            title: 'Architect', 
-            description: 'Solved 10 system design problems', 
-            icon: <BrainCircuit className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 10, 
+        {
+            id: 3,
+            title: 'Architect',
+            description: 'Solved 10 system design problems',
+            icon: <BrainCircuit className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 10,
             date: (progress?.totalSolved || 0) >= 10 ? '2024-02-01' : null,
             threshold: 10
         },
-        { 
-            id: 4, 
-            title: 'System Master', 
-            description: 'Solved 15 system design problems', 
-            icon: <Award className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 15, 
+        {
+            id: 4,
+            title: 'System Master',
+            description: 'Solved 15 system design problems',
+            icon: <Award className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 15,
             date: (progress?.totalSolved || 0) >= 15 ? '2024-02-15' : null,
             threshold: 15
         },
-        { 
-            id: 5, 
-            title: 'Design Expert', 
-            description: 'Solved 20 system design problems', 
-            icon: <Trophy className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 20, 
+        {
+            id: 5,
+            title: 'Design Expert',
+            description: 'Solved 20 system design problems',
+            icon: <Trophy className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 20,
             date: (progress?.totalSolved || 0) >= 20 ? '2024-02-20' : null,
             threshold: 20
         },
-        { 
-            id: 6, 
-            title: 'Streak Master', 
-            description: 'Maintain a 7-day solving streak', 
-            icon: <Zap className="w-6 h-6" />, 
-            unlocked: (progress?.currentStreak || 0) >= 7, 
+        {
+            id: 6,
+            title: 'Streak Master',
+            description: 'Maintain a 7-day solving streak',
+            icon: <Zap className="w-6 h-6" />,
+            unlocked: (progress?.currentStreak || 0) >= 7,
             date: (progress?.currentStreak || 0) >= 7 ? '2024-03-01' : null,
             threshold: 7,
             type: 'streak'
         },
-        { 
-            id: 7, 
-            title: 'Speed Demon', 
-            description: 'Solve 3 problems in one day', 
-            icon: <TrendingUp className="w-6 h-6" />, 
-            unlocked: false, 
+        {
+            id: 7,
+            title: 'Speed Demon',
+            description: 'Solve 3 problems in one day',
+            icon: <TrendingUp className="w-6 h-6" />,
+            unlocked: false,
             date: null,
             threshold: 3,
             type: 'daily'
         },
-        { 
-            id: 8, 
-            title: 'Perfectionist', 
-            description: 'Get 100% score on 5 problems', 
-            icon: <Star className="w-6 h-6" />, 
-            unlocked: false, 
+        {
+            id: 8,
+            title: 'Perfectionist',
+            description: 'Get 100% score on 5 problems',
+            icon: <Star className="w-6 h-6" />,
+            unlocked: false,
             date: null,
             threshold: 5,
             type: 'score'
         },
-        { 
-            id: 9, 
-            title: 'Category Master', 
-            description: 'Solve problems from all categories', 
-            icon: <Medal className="w-6 h-6" />, 
-            unlocked: false, 
+        {
+            id: 9,
+            title: 'Category Master',
+            description: 'Solve problems from all categories',
+            icon: <Medal className="w-6 h-6" />,
+            unlocked: false,
             date: null,
             threshold: 10,
             type: 'category'
         },
-        { 
-            id: 10, 
-            title: 'Legend', 
-            description: 'Solve all 29 system design problems', 
-            icon: <Crown className="w-6 h-6" />, 
-            unlocked: (progress?.totalSolved || 0) >= 29, 
+        {
+            id: 10,
+            title: 'Legend',
+            description: 'Solve all 29 system design problems',
+            icon: <Crown className="w-6 h-6" />,
+            unlocked: (progress?.totalSolved || 0) >= 29,
             date: (progress?.totalSolved || 0) >= 29 ? '2024-03-15' : null,
             threshold: 29
         },
@@ -228,7 +228,7 @@ export default function ProfilePage() {
                 <div className="max-w-7xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link 
+                            <Link
                                 href="/"
                                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
                             >
@@ -275,7 +275,7 @@ export default function ProfilePage() {
                                     onImageChange={handleAvatarChange}
                                     isEditing={isEditing}
                                 />
-                                
+
                                 <h2 className="text-2xl font-black tracking-tight mb-2">
                                     {isEditing ? (
                                         <input
@@ -300,7 +300,7 @@ export default function ProfilePage() {
                                         profileData.role
                                     )}
                                 </p>
-                                
+
                                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-6">
                                     <MapPin className="w-4 h-4" />
                                     {isEditing ? (
@@ -433,6 +433,18 @@ export default function ProfilePage() {
                         >
                             {activeTab === 'overview' && (
                                 <>
+                                    {/* Activity Tracker */}
+                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h3 className="text-xl font-black tracking-tight">Activity Tracker</h3>
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-500 rounded-full border border-green-500/20">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Active System Designer</span>
+                                            </div>
+                                        </div>
+                                        <ActivityGrid />
+                                    </div>
+
                                     {/* Progress Overview */}
                                     <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
                                         <h3 className="text-xl font-black tracking-tight mb-6">Progress Overview</h3>
@@ -506,7 +518,7 @@ export default function ProfilePage() {
                                         <span className="text-sm text-muted-foreground">Last 12 months</span>
                                     </div>
                                     <ActivityGrid />
-                                    
+
                                     {/* Activity Stats */}
                                     <div className="grid md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-border">
                                         <div className="text-center">

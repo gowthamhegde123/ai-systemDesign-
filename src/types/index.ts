@@ -36,6 +36,7 @@ export interface Problem {
 
 export interface AIAnalysisResult {
   status: 'Pass' | 'Fail';
+  rating?: 'Excellent' | 'Improving' | 'Incomplete';
   feedback: string;
   score: number;
   suggestions?: string[];

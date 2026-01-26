@@ -41,20 +41,41 @@ const mockUserProgress = {
     'file-sync': '2024-02-25',
     'onepic': '2024-02-28',
     'airline-checkin': '2024-03-02',
-    'counting-impressions': '2024-03-05'
+    'counting-impressions': '2024-03-05',
+    // Recent activity for current month to show levels
+    'sql-kv': '2026-01-20',
+    'queue-consumers': '2026-01-21',
+    'realtime-db': '2026-01-21',
+    'task-scheduler': '2026-01-23',
+    'distributed-locking': '2026-01-23',
+    'search-autocomplete': '2026-01-23',
+    'api-gateway': '2026-01-25',
+    'global-id-gen': '2026-01-25',
+    'metrics-service': '2026-01-25',
+    'distributed-tracing': '2026-01-25',
+    // Activity for 2025 to show it in selector
+    'web-server-base': '2025-03-12',
+    'lb-config': '2025-03-13',
+    'cdn-setup': '2025-07-20',
+    'security-waf': '2025-07-20',
+    'monitoring-dash': '2025-11-05'
   },
-  currentStreak: 7,
-  longestStreak: 12,
-  totalSolved: 18
+  currentStreak: 12,
+  longestStreak: 18,
+  totalSolved: 33
 };
 
 export async function GET() {
   try {
     const session = await getServerSession();
-    
-    if (!session) {
+
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // MULTI-USER SUPPORT: In a production app, you would fetch progress 
+    // from a database using the user's email:
+    // const userProgress = await db.progress.findUnique({ where: { email: session.user.email } });
 
     return NextResponse.json(mockUserProgress);
   } catch (error) {
@@ -69,13 +90,13 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession();
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { questionId } = await request.json();
-    
+
     if (!questionId) {
       return NextResponse.json({ error: 'Question ID is required' }, { status: 400 });
     }
@@ -83,7 +104,7 @@ export async function POST(request: Request) {
     // In a real app, you would update the database here
     // For now, we'll just return success
     const today = new Date().toISOString().split('T')[0];
-    
+
     return NextResponse.json({
       success: true,
       questionId,

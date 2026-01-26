@@ -8,13 +8,16 @@ import { useUserProgress } from '@/lib/hooks/useUserProgress';
 import { SystemDesignQuestion } from '@/lib/data/system-design-questions';
 import { AIAnalysisResult } from '@/types';
 import {
-    Play, CheckCircle2, AlertCircle, Loader2,
-    ChevronLeft, Send, Search as SearchIcon,
-    Trophy, Sparkles, BrainCircuit, History,
-    ArrowRight, Info, Maximize, Clock, Users, Code, Target, Lightbulb, Wrench
+  CheckCircle2, AlertCircle, Loader2,
+  ChevronLeft, Send, Search as SearchIcon,
+  Trophy, Sparkles, BrainCircuit, History,
+  ArrowRight, Info, Maximize, Clock, Users, Code, Target, Lightbulb, Wrench, MessageSquareText,
+  Timer, Rocket, Star, PartyPopper, Zap, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { getSolution, ProblemSolution } from '@/lib/data/solutions';
+import { BookOpen, Map, X } from 'lucide-react';
 
 // Convert SystemDesignQuestion to Problem format for the store
 const convertToProblem = (question: SystemDesignQuestion) => ({
@@ -45,6 +48,27 @@ export default function SystemDesignCanvas() {
 
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AIAnalysisResult | null>(null);
+  const [solution, setSolution] = useState<ProblemSolution | null>(null);
+  const [showSolution, setShowSolution] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [askingAI, setAskingAI] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [startTime] = useState(Date.now());
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [performanceResults, setPerformanceResults] = useState<{
+    totalScore: number;
+    timeLabel: string;
+    designScore: number;
+    efficiencyScore: number;
+    optimizationScore: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (params.id) {
+      const sol = getSolution(params.id as string);
+      setSolution(sol || null);
+    }
+  }, [params.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,30 +117,119 @@ export default function SystemDesignCanvas() {
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        setResult({
+          status: 'Fail',
+          feedback: `Analysis Error: ${data.message || data.error || 'Server error'}`,
+          score: 0,
+          suggestions: ['Check your API key in .env.local', 'Verify your internet connection']
+        });
+        return;
+      }
+
       setResult(data);
       if (data.status === 'Pass') {
         setPassed(true);
       } else {
         setPassed(false);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Analysis failed', error);
+      const message = error instanceof Error ? error.message : 'The AI service is currently unavailable.';
+      setResult({
+        status: 'Fail',
+        feedback: `Connection Error: ${message}`,
+        score: 0,
+        suggestions: ['Try again in a few moments']
+      });
     } finally {
       setAnalyzing(false);
     }
   };
 
+  const handleAskAI = async () => {
+    if (!currentProblem || !question) return;
+
+    setAskingAI(true);
+    setAiHint(null);
+
+    try {
+      const response = await fetch('/api/ai-evaluator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          design: { nodes, edges },
+          problem: currentProblem,
+          type: 'hint'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to get AI hint');
+      }
+
+      if (data.feedback) {
+        setAiHint(data.feedback);
+      } else if (typeof data === 'string') {
+        setAiHint(data);
+      } else {
+        setAiHint("I've analyzed your design, but I'm struggling to put the hint into words. Try adding another component!");
+      }
+    } catch (error: unknown) {
+      console.error('AI Hint failed', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setAiHint(`I encountered an error: ${message}. Please check your API key and connection.`);
+    } finally {
+      setAskingAI(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!isPassed || !question) return;
-    
+
+    const endTime = Date.now();
+    const durationSeconds = Math.floor((endTime - startTime) / 1000);
+
+    // Heuristic Score Calculation
+    // 1. Design Quality (40 points) - Nodes and Edges density
+    const designRawWeight = (nodes.length * 3) + (edges.length * 2);
+    const designScore = Math.min(40, designRawWeight);
+
+    // 2. Optimization Score (30 points) - Specific optimization nodes
+    const optimizationNodeTypes = ['REDIS', 'CDN', 'LB', 'API_GATEWAY', 'KAFKA', 'MONITORING', 'WAF'];
+    const optCount = nodes.filter(n => optimizationNodeTypes.includes(n.data.type)).length;
+    const optimizationScore = Math.min(30, optCount * 7.5);
+
+    // 3. Efficiency/Time (30 points)
+    const targetSeconds = 1800; // 30 mins
+    let timeFactor = 1.0;
+    if (durationSeconds < targetSeconds) timeFactor = 1.0;
+    else if (durationSeconds < targetSeconds * 2) timeFactor = 0.8;
+    else timeFactor = 0.6;
+
+    const efficiencyScore = Math.round(30 * timeFactor);
+
+    const totalScore = Math.round(designScore + optimizationScore + efficiencyScore);
+
+    setPerformanceResults({
+      totalScore,
+      timeLabel: `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`,
+      designScore: Math.round(designScore),
+      efficiencyScore,
+      optimizationScore: Math.round(optimizationScore)
+    });
+
     // Mark question as solved
     const success = await markQuestionSolved(question.id);
-    
+
     if (success) {
       setSubmitted(true);
-      alert('Congratulations! Your system design has been submitted successfully and marked as solved.');
+      setShowCompletionModal(true);
     } else {
-      alert('Design submitted successfully!');
+      setShowCompletionModal(true);
       setSubmitted(true);
     }
   };
@@ -180,6 +293,17 @@ export default function SystemDesignCanvas() {
         </div>
 
         <div className="flex items-center gap-3">
+          {solution && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowSolution(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all text-xs font-bold border border-primary/20 shadow-sm"
+            >
+              <BookOpen className="w-3 h-3" />
+              View Solution
+            </motion.button>
+          )}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -189,6 +313,16 @@ export default function SystemDesignCanvas() {
           >
             {analyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <BrainCircuit className="w-3 h-3 text-primary" />}
             Run AI Analysis
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleAskAI}
+            disabled={askingAI}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 rounded-lg disabled:opacity-50 transition-all text-xs font-bold border border-indigo-500/20 shadow-sm"
+          >
+            {askingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageSquareText className="w-3 h-3" />}
+            Ask AI for Hint
           </motion.button>
           <motion.button
             whileHover={isPassed ? { scale: 1.05 } : {}}
@@ -225,7 +359,7 @@ export default function SystemDesignCanvas() {
               <p className="text-sm text-muted-foreground leading-relaxed font-medium mb-4">
                 {question.description}
               </p>
-              
+
               {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 {question.tags.map((tag) => (
@@ -373,7 +507,7 @@ export default function SystemDesignCanvas() {
               <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
                 <BrainCircuit className="w-24 h-24 text-primary" />
               </div>
-              <h4 className="text-xs font-black text-primary uppercase tracking-widest mb-3">Architect's Tip</h4>
+              <h4 className="text-xs font-black text-primary uppercase tracking-widest mb-3">Architect&apos;s Tip</h4>
               <p className="text-[11px] text-foreground/70 leading-relaxed font-medium">
                 Start with the core components and data flow. Consider scalability, consistency, and fault tolerance from the beginning.
               </p>
@@ -384,6 +518,257 @@ export default function SystemDesignCanvas() {
         {/* Right Panel: Canvas */}
         <div className="flex-grow relative bg-background">
           <DesignCanvas />
+
+          {/* Guided Solution Overlay */}
+          <AnimatePresence>
+            {showSolution && solution && (
+              <motion.div
+                initial={{ x: 500, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 500, opacity: 0 }}
+                className="absolute top-4 right-4 bottom-4 w-[400px] bg-card/95 backdrop-blur-2xl border border-border shadow-2xl rounded-3xl flex flex-col z-[60] overflow-hidden"
+              >
+                <div className="p-6 border-b border-border flex items-center justify-between bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Map className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Guided Solution</h3>
+                      <p className="text-[10px] text-muted-foreground font-bold">Step {currentStep + 1} of {solution.steps.length}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowSolution(false)}
+                    className="p-2 hover:bg-muted rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+
+                <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: "spring", damping: 20, stiffness: 100 }}
+                  >
+                    <div className="mb-6">
+                      <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Step {currentStep + 1}</div>
+                      <h4 className="text-xl font-black tracking-tight mb-4">{solution.steps[currentStep].title}</h4>
+                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                        {solution.steps[currentStep].description}
+                      </p>
+                    </div>
+
+                    <div className="p-6 bg-muted/50 rounded-2xl border border-border/50 relative overflow-hidden group">
+                      <div className="absolute -right-2 -top-2 opacity-5 group-hover:scale-110 transition-transform">
+                        <Lightbulb className="w-16 h-16 text-primary" />
+                      </div>
+                      <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3">Why this specifically?</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed font-medium italic">
+                        &quot;{solution.steps[currentStep].reasoning}&quot;
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+
+                <div className="p-6 border-t border-border bg-card/50 flex items-center justify-between">
+                  <button
+                    onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+                    disabled={currentStep === 0}
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground disabled:opacity-30 flex items-center gap-2"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </button>
+                  <div className="flex gap-1">
+                    {solution.steps.map((_, i) => (
+                      <div
+                        key={i}
+                        className={clsx(
+                          "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                          i === currentStep ? "bg-primary w-4" : "bg-muted"
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (currentStep < solution.steps.length - 1) {
+                        setCurrentStep(prev => prev + 1);
+                      } else {
+                        setShowSolution(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary text-primary-foreground text-xs font-black rounded-xl uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center gap-2"
+                  >
+                    {currentStep < solution.steps.length - 1 ? 'Next' : 'Finish'}
+                    {currentStep < solution.steps.length - 1 && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* AI Hint Overlay */}
+          <AnimatePresence>
+            {aiHint && (
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                className="absolute top-24 right-8 w-[350px] bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 shadow-2xl rounded-2xl p-6 z-[55]"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-indigo-500/20 rounded-lg">
+                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                  </div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500">AI Architect Hint</h3>
+                  <button onClick={() => setAiHint(null)} className="ml-auto p-1.5 hover:bg-indigo-500/10 rounded-full transition-colors">
+                    <X className="w-3 h-3 text-indigo-500" />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {aiHint.split('\n').filter(line => line.trim()).map((line, i) => (
+                    <div key={i} className="flex gap-3 items-start">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                      <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+                        {line.replace(/^[•\s*-]+/, '').trim()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 pt-4 border-t border-indigo-500/10 text-[10px] text-indigo-500/70 font-bold italic">
+                  &quot;Keep designing, you&apos;re getting there!&quot;
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Completion Celebration Modal */}
+          <AnimatePresence>
+            {showCompletionModal && performanceResults && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                  onClick={() => setShowCompletionModal(false)}
+                />
+
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-xl bg-card border border-border shadow-2xl rounded-[2.5rem] overflow-hidden"
+                >
+                  {/* Top Header Section */}
+                  <div className="bg-primary/10 p-10 flex flex-col items-center text-center relative">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", delay: 0.2 }}
+                      className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6"
+                    >
+                      <Trophy className="w-10 h-10 text-primary" />
+                    </motion.div>
+                    <h2 className="text-3xl font-black tracking-tighter mb-2">Architect Milestone!</h2>
+                    <p className="text-muted-foreground font-medium">Your design for <span className="text-foreground font-bold">{question?.title}</span> has been certified.</p>
+
+                    {/* Floating Icons for decoration */}
+                    <div className="absolute top-10 left-10 opacity-20"><Zap className="w-8 h-8 text-yellow-500" /></div>
+                    <div className="absolute bottom-10 right-10 opacity-20"><Star className="w-8 h-8 text-primary" /></div>
+                  </div>
+
+                  <div className="p-10 space-y-8">
+                    {/* Score Ring */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-40 h-40 flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90">
+                          <circle
+                            cx="80" cy="80" r="70"
+                            fill="transparent"
+                            stroke="currentColor"
+                            strokeWidth="12"
+                            className="text-muted/20"
+                          />
+                          <motion.circle
+                            cx="80" cy="80" r="70"
+                            fill="transparent"
+                            stroke="currentColor"
+                            strokeWidth="12"
+                            strokeDasharray={440}
+                            initial={{ strokeDashoffset: 440 }}
+                            animate={{ strokeDashoffset: 440 - (440 * performanceResults.totalScore) / 100 }}
+                            transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                            className="text-primary"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-5xl font-black tracking-tighter">{performanceResults.totalScore}</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Mastery Score</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats Breakdown */}
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { label: 'Complexity', value: performanceResults.designScore, max: 40, icon: BarChart3, color: 'text-blue-500' },
+                        { label: 'Optimization', value: performanceResults.optimizationScore, max: 30, icon: Rocket, color: 'text-purple-500' },
+                        { label: 'Time', value: performanceResults.timeLabel, total: true, icon: Timer, color: 'text-orange-500' }
+                      ].map((stat, i) => (
+                        <div key={i} className="bg-muted/50 p-4 rounded-3xl border border-border/50 text-center">
+                          <stat.icon className={clsx("w-5 h-5 mx-auto mb-2", stat.color)} />
+                          <div className="text-xs font-black tracking-widest text-muted-foreground uppercase mb-1">{stat.label}</div>
+                          <div className="text-sm font-bold">
+                            {stat.total ? stat.value : `${stat.value}/${stat.max}`}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10">
+                      <div className="flex items-center gap-3 mb-2">
+                        <PartyPopper className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-black uppercase tracking-widest text-primary">Architect&apos;s Review</span>
+                      </div>
+                      <p className="text-xs text-foreground/80 leading-relaxed font-medium transition-all">
+                        {performanceResults.totalScore > 80
+                          ? "Exceptional work! You've balanced scalability, caching, and infrastructure brilliantly. This is a production-grade blueprint."
+                          : performanceResults.totalScore > 60
+                            ? "Strong design. You have a solid grasp of the core flow. Adding more failover mechanisms or observability would take this to the next level."
+                            : "Successful submission. You managed to solve the functional requirements. Continue exploring distributed patterns to improve the score!"}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setShowCompletionModal(false)}
+                      className="w-full py-4 bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      Continue Training
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Confetti (CSS-based) - simplified for this implementation */}
+                <div className="pointer-events-none fixed inset-0 z-[110] overflow-hidden opacity-50">
+                  {/* Decorative sparkles */}
+                  {[...Array(20)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ y: -20, x: Math.random() * 100 + "%", opacity: 0 }}
+                      animate={{ y: "100vh", opacity: [0, 1, 0] }}
+                      transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 5 }}
+                      className="absolute w-2 h-2 rounded-full bg-primary"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
 
           {/* Analysis Result Overlay */}
           <AnimatePresence>
@@ -405,31 +790,28 @@ export default function SystemDesignCanvas() {
                     <h3 className="font-black text-xl leading-none tracking-tight">
                       {result.status === 'Pass' ? 'Design Approved' : 'Critique Received'}
                     </h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-grow h-1.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${result.score}%` }}
-                          className={clsx(
-                            "h-full rounded-full",
-                            result.score > 70 ? "bg-green-500" : result.score > 40 ? "bg-yellow-500" : "bg-red-500"
-                          )}
-                        />
-                      </div>
-                      <span className="text-[10px] font-black font-mono">{result.score}%</span>
+                    <div className="mt-2">
+                      <span className={clsx(
+                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                        result.rating === 'Excellent' ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                          result.rating === 'Improving' ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" :
+                            "bg-red-500/10 text-red-500 border-red-500/20"
+                      )}>
+                        {result.rating || (result.score > 70 ? 'Excellent' : result.score > 40 ? 'Improving' : 'Incomplete')}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed font-medium italic">
-                  "{result.feedback}"
+                  &quot;{result.feedback}&quot;
                 </p>
 
                 {result.suggestions && result.suggestions.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-border">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-3 h-3 text-primary" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Architect's Suggestions</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Architect&apos;s Suggestions</p>
                     </div>
                     <ul className="space-y-2">
                       {result.suggestions.map((s, i) => (
