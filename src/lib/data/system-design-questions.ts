@@ -13,6 +13,13 @@ export interface SystemDesignQuestion {
   techStack: string[];
 }
 
+import { additionalQuestions1 } from './additional-questions-1';
+import { additionalQuestions2 } from './additional-questions-2';
+import { additionalQuestions3 } from './additional-questions-3';
+import { additionalQuestions4 } from './additional-questions-4';
+import { additionalQuestions5 } from './additional-questions-5';
+
+
 export const systemDesignQuestions: SystemDesignQuestion[] = [
   // STORAGE & DATABASES
   {
@@ -791,7 +798,12 @@ export const systemDesignQuestions: SystemDesignQuestion[] = [
     learningOutcomes: ['Social media architecture', 'Content delivery', 'Mobile backend'],
     estimatedTime: '6-8 hours',
     techStack: ['Mobile Backend', 'CDN', 'Push Notifications']
-  }
+  },
+  ...additionalQuestions1,
+  ...additionalQuestions2,
+  ...additionalQuestions3,
+  ...additionalQuestions4,
+  ...additionalQuestions5
 ];
 
 // Helper functions for filtering and searching
@@ -809,7 +821,7 @@ export const getQuestionsByTag = (tag: string) => {
 
 export const searchQuestions = (query: string) => {
   const lowercaseQuery = query.toLowerCase();
-  return systemDesignQuestions.filter(q => 
+  return systemDesignQuestions.filter(q =>
     q.title.toLowerCase().includes(lowercaseQuery) ||
     q.description.toLowerCase().includes(lowercaseQuery) ||
     q.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))

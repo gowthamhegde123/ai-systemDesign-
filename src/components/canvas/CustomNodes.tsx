@@ -56,24 +56,74 @@ const BaseNode = ({ data, selected }: NodeProps) => {
             animate={{ scale: 1, opacity: 1 }}
             whileHover={{ scale: 1.02 }}
             className={clsx(
-                "px-4 py-3 shadow-xl rounded-xl bg-card border-2 min-w-[180px] relative overflow-hidden group",
-                selected ? "border-primary ring-4 ring-primary/20" : "border-border",
-                "transition-all duration-300 ease-out"
+                "px-4 py-3 shadow-xl rounded-xl bg-card border-2 min-w-[180px] relative group",
+                "cursor-pointer active:scale-95 transition-all duration-200 ease-out",
+                selected
+                    ? "border-primary ring-[6px] ring-primary/20 shadow-2xl scale-[1.02]"
+                    : "border-border hover:border-primary/50 hover:shadow-2xl"
             )}
         >
             {/* Background Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl overflow-hidden" />
 
-            <Handle
-                type="target"
-                position={Position.Top}
-                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
-            />
-            <Handle
-                type="target"
-                position={Position.Left}
-                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
-            />
+            {/* Handle Positions */}
+            <div className="absolute inset-0 pointer-events-none">
+                <Handle
+                    type="target"
+                    position={Position.Top}
+                    id="t"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                />
+                <Handle
+                    type="source"
+                    position={Position.Top}
+                    id="ts"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                    style={{ left: '50%' }}
+                />
+
+                <Handle
+                    type="target"
+                    position={Position.Bottom}
+                    id="b"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                />
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    id="bs"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                    style={{ left: '50%' }}
+                />
+
+                <Handle
+                    type="target"
+                    position={Position.Left}
+                    id="l"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                />
+                <Handle
+                    type="source"
+                    position={Position.Left}
+                    id="ls"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                    style={{ top: '50%' }}
+                />
+
+                <Handle
+                    type="target"
+                    position={Position.Right}
+                    id="r"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                />
+                <Handle
+                    type="source"
+                    position={Position.Right}
+                    id="rs"
+                    className="!w-2.5 !h-2.5 !bg-primary !border-2 !border-background !opacity-0 group-hover:!opacity-100 transition-opacity !pointer-events-auto hover:!scale-150"
+                    style={{ top: '50%' }}
+                />
+            </div>
 
             <div className="flex items-center gap-4 relative z-10">
                 <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-muted transition-colors shadow-inner">
@@ -86,17 +136,6 @@ const BaseNode = ({ data, selected }: NodeProps) => {
                     </div>
                 </div>
             </div>
-
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
-            />
-            <Handle
-                type="source"
-                position={Position.Right}
-                className="w-4 h-4 !bg-primary border-2 border-background hover:scale-125 transition-transform"
-            />
 
             {/* Selection Indicator */}
             {selected && (

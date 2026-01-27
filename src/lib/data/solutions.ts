@@ -424,6 +424,367 @@ export const SOLUTIONS: ProblemSolution[] = [
         reasoning: 'Indexing provides O(1) or O(log N) lookup speeds, and sharding allows the SQL engine to scale beyond a single machine.'
       }
     ]
+  },
+  // Solutions for numeric problem IDs (matching PROBLEMS data)
+  {
+    problemId: '1', // URL Shortener
+    steps: [
+      {
+        title: 'Step 1: REST API Layer',
+        description: 'Create endpoints for URL shortening (POST) and redirection (GET).',
+        reasoning: 'A clean API layer is necessary for clients (web/mobile) to interact with the service.'
+      },
+      {
+        title: 'Step 2: ID Generation (Hashing/KGS)',
+        description: 'Implement a Key Generation Service or use base62 encoding on an auto-incrementing ID.',
+        reasoning: 'To ensure uniqueness and avoid collisions at scale, a dedicated ID generator is often better than simple hashing.'
+      },
+      {
+        title: 'Step 3: Database Selection (NoSQL)',
+        description: 'Use a NoSQL database like MongoDB or DynamoDB to store mapping (ID -> Long URL).',
+        reasoning: 'NoSQL databases are highly scalable for read-heavy workloads and don\'t require complex joins.'
+      },
+      {
+        title: 'Step 4: Caching Layer',
+        description: 'Cache frequently accessed "hot" URLs using Redis.',
+        reasoning: 'Redirection is a very high-read operation. Caching significantly reduces database load and latency.'
+      }
+    ]
+  },
+  {
+    problemId: '2', // Pastebin
+    steps: [
+      {
+        title: 'Step 1: Upload API',
+        description: 'Create an endpoint to accept text content and generate a unique ID.',
+        reasoning: 'Simple API design makes it easy for users to paste and share content quickly.'
+      },
+      {
+        title: 'Step 2: Storage with TTL',
+        description: 'Store paste content in a database with Time-To-Live (TTL) support.',
+        reasoning: 'TTL automatically removes expired pastes, saving storage costs and maintaining system performance.'
+      },
+      {
+        title: 'Step 3: CDN for Popular Pastes',
+        description: 'Cache frequently accessed pastes at edge locations.',
+        reasoning: 'Popular code snippets are accessed globally. CDN reduces latency for users worldwide.'
+      }
+    ]
+  },
+  {
+    problemId: '3', // Web Crawler
+    steps: [
+      {
+        title: 'Step 1: URL Frontier Queue',
+        description: 'Maintain a priority queue of URLs to crawl.',
+        reasoning: 'A frontier ensures systematic crawling and prevents revisiting the same pages unnecessarily.'
+      },
+      {
+        title: 'Step 2: Duplicate Detection',
+        description: 'Use a Bloom filter or hash set to track visited URLs.',
+        reasoning: 'Avoiding duplicates saves bandwidth and processing time, critical when crawling billions of pages.'
+      },
+      {
+        title: 'Step 3: Distributed Workers',
+        description: 'Deploy multiple crawler workers to fetch pages in parallel.',
+        reasoning: 'Parallelization dramatically increases crawl speed and allows the system to scale horizontally.'
+      },
+      {
+        title: 'Step 4: Content Storage',
+        description: 'Store crawled content in a distributed file system or object storage.',
+        reasoning: 'Web pages are unstructured and large. Object storage provides cost-effective, scalable storage.'
+      }
+    ]
+  },
+  {
+    problemId: '4', // Rate Limiter
+    steps: [
+      {
+        title: 'Step 1: Token Bucket Algorithm',
+        description: 'Implement a token bucket for each user/API key.',
+        reasoning: 'Token bucket allows burst traffic while maintaining an average rate limit over time.'
+      },
+      {
+        title: 'Step 2: Distributed Counter (Redis)',
+        description: 'Use Redis with atomic operations to track request counts.',
+        reasoning: 'Redis provides fast, atomic increments essential for accurate rate limiting in distributed systems.'
+      },
+      {
+        title: 'Step 3: Response Headers',
+        description: 'Return rate limit status in HTTP headers (X-RateLimit-Remaining, X-RateLimit-Reset).',
+        reasoning: 'Transparency helps API consumers manage their usage and avoid hitting limits unexpectedly.'
+      }
+    ]
+  },
+  {
+    problemId: '5', // Instagram
+    steps: [
+      {
+        title: 'Step 1: Photo Upload Service',
+        description: 'Handle photo uploads and store in object storage (S3).',
+        reasoning: 'Object storage is designed for large binary files and provides high durability.'
+      },
+      {
+        title: 'Step 2: Image Processing Pipeline',
+        description: 'Generate thumbnails and multiple resolutions asynchronously.',
+        reasoning: 'Processing images in the background prevents blocking the user and enables responsive UI.'
+      },
+      {
+        title: 'Step 3: Feed Generation',
+        description: 'Build a news feed using a fan-out approach (push or pull).',
+        reasoning: 'Pre-computing feeds (fan-out on write) provides fast load times but requires more storage. Pull-based is more efficient for celebrities with millions of followers.'
+      },
+      {
+        title: 'Step 4: CDN for Media',
+        description: 'Serve images through a global CDN.',
+        reasoning: 'CDN reduces latency for users worldwide and offloads traffic from origin servers.'
+      }
+    ]
+  },
+  {
+    problemId: '6', // Dropbox
+    steps: [
+      {
+        title: 'Step 1: Chunking & Hashing',
+        description: 'Break files into chunks and generate hashes for each chunk.',
+        reasoning: 'Chunking allows the system to upload only changed parts of a file (Delta sync), saving bandwidth.'
+      },
+      {
+        title: 'Step 2: Metadata Synchronization',
+        description: 'Keep a central metadata store to track file versions, owners, and chunk locations.',
+        reasoning: 'Metadata is small and highly structured, allowing for fast queries across all user devices.'
+      },
+      {
+        title: 'Step 3: Cloud Storage Integration',
+        description: 'Store actual chunks in an object storage service like S3.',
+        reasoning: 'Provides limitless scalability and high durability for billions of file chunks.'
+      },
+      {
+        title: 'Step 4: Conflict Resolution',
+        description: 'Implement a strategy to handle simultaneous edits (e.g., "Keep both files").',
+        reasoning: 'In a distributed sync system, conflicting edits are inevitable. A clear policy ensures no data loss.'
+      }
+    ]
+  },
+  {
+    problemId: '7', // Notification System
+    steps: [
+      {
+        title: 'Step 1: Multi-Channel Gateway',
+        description: 'Create adapters for different notification channels (Push, Email, SMS).',
+        reasoning: 'Abstraction allows the system to add new channels without changing core logic.'
+      },
+      {
+        title: 'Step 2: Priority Queue',
+        description: 'Implement priority queues to handle urgent notifications first.',
+        reasoning: 'Critical alerts (security, payments) must be delivered faster than promotional content.'
+      },
+      {
+        title: 'Step 3: Rate Limiting per Channel',
+        description: 'Apply rate limits to prevent overwhelming users or hitting provider limits.',
+        reasoning: 'Too many notifications annoy users and can trigger spam filters or provider throttling.'
+      },
+      {
+        title: 'Step 4: Retry Logic with Backoff',
+        description: 'Implement exponential backoff for failed deliveries.',
+        reasoning: 'Temporary failures (network issues) should be retried, but not so aggressively that they cause cascading failures.'
+      }
+    ]
+  },
+  {
+    problemId: '8', // WhatsApp
+    steps: [
+      {
+        title: 'Step 1: WebSocket Gateway',
+        description: 'Establish persistent connections with clients using WebSockets.',
+        reasoning: 'Real-time messaging requires bi-directional communication. WebSockets are ideal for this.'
+      },
+      {
+        title: 'Step 2: Message Queue (Kafka)',
+        description: 'Buffer messages in a distributed queue for reliability.',
+        reasoning: 'Queuing ensures messages aren\'t lost if a server crashes and enables asynchronous processing.'
+      },
+      {
+        title: 'Step 3: Message Storage',
+        description: 'Store messages in a distributed database with replication.',
+        reasoning: 'Users expect message history to be available across devices and after app reinstalls.'
+      },
+      {
+        title: 'Step 4: Delivery Receipts',
+        description: 'Track message states (sent, delivered, read) using acknowledgments.',
+        reasoning: 'Receipts provide transparency and improve user experience by confirming message delivery.'
+      }
+    ]
+  },
+  {
+    problemId: '9', // Ad Click Aggregator
+    steps: [
+      {
+        title: 'Step 1: High-Throughput Ingestion',
+        description: 'Use a system like Kafka to buffer billions of daily event logs.',
+        reasoning: 'The system must handle massive spikes without losing data or crashing. Queuing is essential.'
+      },
+      {
+        title: 'Step 2: Stream Processing (Flink/Spark)',
+        description: 'Aggregate counts in real-time across different dimensions (AdID, Platform, Region).',
+        reasoning: 'Real-time billing requires real-time data processing. Stream processing allows for low-latency aggregation.'
+      },
+      {
+        title: 'Step 3: Fault-Tolerant State Store',
+        description: 'Keep the running totals in a highly available, distributed state store.',
+        reasoning: 'Exactly-once processing requires that if a worker fails, its state (the counts so far) can be recovered perfectly.'
+      }
+    ]
+  },
+  {
+    problemId: '10', // YouTube
+    steps: [
+      {
+        title: 'Step 1: Upload & Initial Storage',
+        description: 'Store raw video files in a temporary storage bucket.',
+        reasoning: 'Raw videos are huge. Temporary storage allows the system to acknowledge the upload before processing begins.'
+      },
+      {
+        title: 'Step 2: Transcoding Workers',
+        description: 'Use specialized workers to encode video into multiple formats (1080p, 720p, 480p) and codecs.',
+        reasoning: 'Transcoding is resource-intensive. Distributing it across many workers ensures fast processing for all users.'
+      },
+      {
+        title: 'Step 3: Chunking for Adaptive Streaming',
+        description: 'Split videos into short segments (e.g., 5 seconds) and create a manifest file.',
+        reasoning: 'Adaptive bitrate streaming (like HLS or DASH) requires small segments so the player can switch quality based on network speed.'
+      },
+      {
+        title: 'Step 4: CDN Distribution',
+        description: 'Distribute video chunks globally via CDN.',
+        reasoning: 'Serving video from edge locations reduces buffering and improves user experience worldwide.'
+      }
+    ]
+  },
+  {
+    problemId: '11', // Uber
+    steps: [
+      {
+        title: 'Step 1: Real-Time Location Tracking',
+        description: 'Use WebSockets or Server-Sent Events to stream driver locations.',
+        reasoning: 'Real-time updates are essential for matching riders with nearby drivers and showing accurate ETAs.'
+      },
+      {
+        title: 'Step 2: Geospatial Indexing',
+        description: 'Index driver locations using Geohashing or QuadTrees.',
+        reasoning: 'Efficiently finding nearby drivers requires specialized spatial data structures.'
+      },
+      {
+        title: 'Step 3: Matching Algorithm',
+        description: 'Implement a matching service that pairs riders with optimal drivers.',
+        reasoning: 'The algorithm must consider distance, driver rating, and surge pricing to optimize both user experience and business metrics.'
+      },
+      {
+        title: 'Step 4: Payment Integration',
+        description: 'Integrate with payment gateways for secure transactions.',
+        reasoning: 'Reliable payment processing is critical for trust and revenue. Must handle failures gracefully.'
+      }
+    ]
+  },
+  {
+    problemId: '12', // Distributed Message Queue
+    steps: [
+      {
+        title: 'Step 1: Partition Strategy',
+        description: 'Divide topics into partitions for parallel processing.',
+        reasoning: 'Partitioning allows multiple consumers to process messages concurrently, increasing throughput.'
+      },
+      {
+        title: 'Step 2: Replication for Durability',
+        description: 'Replicate each partition across multiple brokers.',
+        reasoning: 'Replication ensures zero data loss even if a broker fails.'
+      },
+      {
+        title: 'Step 3: Consumer Groups',
+        description: 'Implement consumer group coordination for load balancing.',
+        reasoning: 'Consumer groups allow scaling consumption by adding more workers without duplicate processing.'
+      },
+      {
+        title: 'Step 4: Offset Management',
+        description: 'Track consumer offsets to enable replay and exactly-once semantics.',
+        reasoning: 'Offset tracking allows consumers to resume from where they left off after failures.'
+      }
+    ]
+  },
+  {
+    problemId: '13', // Search Engine
+    steps: [
+      {
+        title: 'Step 1: Web Crawler',
+        description: 'Discover and download web pages to build a corpus.',
+        reasoning: 'A search engine is only as good as its data. Efficient crawling is the foundation.'
+      },
+      {
+        title: 'Step 2: Inverted Index',
+        description: 'Map every unique word to a list of documents it appears in.',
+        reasoning: 'An inverted index allows for near-instant retrieval of "all documents containing word X" without scanning every file.'
+      },
+      {
+        title: 'Step 3: Ranking Algorithm (PageRank/BM25)',
+        description: 'Assign relevance scores to documents based on keywords and authority.',
+        reasoning: 'Ranking ensures the most useful results appear at the top, which is what users care about most.'
+      },
+      {
+        title: 'Step 4: Distributed Query Processing',
+        description: 'Shard the index across multiple servers for parallel search.',
+        reasoning: 'Distributing the index allows the system to handle billions of documents and thousands of queries per second.'
+      }
+    ]
+  },
+  {
+    problemId: '14', // Stock Exchange
+    steps: [
+      {
+        title: 'Step 1: Order Book Data Structure',
+        description: 'Implement a high-performance order book using sorted data structures.',
+        reasoning: 'The order book must support ultra-fast insertions, deletions, and matching operations.'
+      },
+      {
+        title: 'Step 2: Matching Engine',
+        description: 'Build a matching engine that pairs buy and sell orders based on price-time priority.',
+        reasoning: 'Fair and deterministic matching is essential for market integrity and regulatory compliance.'
+      },
+      {
+        title: 'Step 3: Low-Latency Infrastructure',
+        description: 'Use in-memory processing and co-location to minimize latency.',
+        reasoning: 'In high-frequency trading, microseconds matter. Every optimization counts.'
+      },
+      {
+        title: 'Step 4: Audit Trail',
+        description: 'Log every order and trade to an append-only ledger.',
+        reasoning: 'Regulatory requirements demand complete, tamper-proof records of all trading activity.'
+      }
+    ]
+  },
+  {
+    problemId: '15', // Proximity Service (Yelp)
+    steps: [
+      {
+        title: 'Step 1: Geohashing / Quadtrees',
+        description: 'Index the world map using Geohashing or a Quadtree structure.',
+        reasoning: 'Traditional database indexes are not efficient for 2D proximity queries. Geohashing converts coordinates into a searchable string.'
+      },
+      {
+        title: 'Step 2: Efficient Spatial Database',
+        description: 'Use a database with native geospatial support (e.g., PostGIS or Redis Geo).',
+        reasoning: 'Spatial databases provide optimized functions for calculating distances and finding points within a radius.'
+      },
+      {
+        title: 'Step 3: Cache Nearby Results',
+        description: 'Cache search results for popular areas to reduce database load.',
+        reasoning: 'Many users in the same city will query for similar nearby places. Caching improves latency significantly.'
+      },
+      {
+        title: 'Step 4: Business Data Updates',
+        description: 'Implement a pipeline to handle business information updates (hours, reviews, photos).',
+        reasoning: 'Keeping data fresh is critical for user trust. Stale information leads to poor user experience.'
+      }
+    ]
   }
 ];
 

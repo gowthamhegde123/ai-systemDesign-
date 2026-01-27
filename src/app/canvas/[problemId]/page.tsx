@@ -10,10 +10,11 @@ import {
     Play, CheckCircle, AlertCircle, Loader2,
     ChevronLeft, Send, Search as SearchIcon,
     Trophy, Sparkles, BrainCircuit, History,
-    ArrowRight, Info, Maximize
+    ArrowRight, Info, Maximize, BookOpen, MessageSquareText, X, Map, Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { getSolution, ProblemSolution } from '@/lib/data/solutions';
 
 export default function CanvasPage() {
     const params = useParams();
@@ -29,6 +30,11 @@ export default function CanvasPage() {
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<AIAnalysisResult | null>(null);
     const [showRequirements, setShowRequirements] = useState(true);
+    const [solution, setSolution] = useState<ProblemSolution | null>(null);
+    const [showSolution, setShowSolution] = useState(false);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [askingAI, setAskingAI] = useState(false);
+    const [aiHint, setAiHint] = useState<string | null>(null);
 
     useEffect(() => {
         const problem = PROBLEMS.find(p => p.id === problemId);
@@ -36,6 +42,13 @@ export default function CanvasPage() {
             setProblem(problem);
         }
     }, [problemId, setProblem]);
+
+    useEffect(() => {
+        if (problemId) {
+            const sol = getSolution(problemId as string);
+            setSolution(sol || null);
+        }
+    }, [problemId]);
 
     const handleAnalyze = async () => {
         if (!currentProblem) return;
@@ -64,6 +77,45 @@ export default function CanvasPage() {
             console.error('Analysis failed', error);
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    const handleAskAI = async () => {
+        if (!currentProblem) return;
+
+        setAskingAI(true);
+        setAiHint(null);
+
+        try {
+            const response = await fetch('/api/ai-evaluator', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    design: { nodes, edges },
+                    problem: currentProblem,
+                    type: 'hint'
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || 'Failed to get AI hint');
+            }
+
+            if (data.feedback) {
+                setAiHint(data.feedback);
+            } else if (typeof data === 'string') {
+                setAiHint(data);
+            } else {
+                setAiHint("I've analyzed your design, but I'm struggling to put the hint into words. Try adding another component!");
+            }
+        } catch (error: unknown) {
+            console.error('AI Hint failed', error);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setAiHint(`I encountered an error: ${message}. Please check your API key and connection.`);
+        } finally {
+            setAskingAI(false);
         }
     };
 
@@ -116,6 +168,27 @@ export default function CanvasPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {solution && (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowSolution(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all text-xs font-bold border border-primary/20 shadow-sm"
+                        >
+                            <BookOpen className="w-3 h-3" />
+                            View Solution
+                        </motion.button>
+                    )}
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleAskAI}
+                        disabled={askingAI}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 rounded-lg disabled:opacity-50 transition-all text-xs font-bold border border-indigo-500/20 shadow-sm"
+                    >
+                        {askingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageSquareText className="w-3 h-3" />}
+                        Ask AI for Hint
+                    </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -300,6 +373,133 @@ export default function CanvasPage() {
                                 >
                                     Dismiss Analysis
                                 </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Guided Solution Overlay */}
+                    <AnimatePresence>
+                        {showSolution && solution && (
+                            <motion.div
+                                initial={{ x: 500, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 500, opacity: 0 }}
+                                className="absolute top-4 right-4 bottom-4 w-[400px] bg-card/95 backdrop-blur-2xl border border-border shadow-2xl rounded-3xl flex flex-col z-[60] overflow-hidden"
+                            >
+                                <div className="p-6 border-b border-border flex items-center justify-between bg-primary/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-lg">
+                                            <Map className="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Guided Solution</h3>
+                                            <p className="text-[10px] text-muted-foreground font-bold">Step {currentStep + 1} of {solution.steps.length}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowSolution(false)}
+                                        className="p-2 hover:bg-muted rounded-full transition-colors"
+                                    >
+                                        <X className="w-4 h-4 text-muted-foreground" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                                    <motion.div
+                                        key={currentStep}
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ type: "spring", damping: 20, stiffness: 100 }}
+                                    >
+                                        <div className="mb-6">
+                                            <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Step {currentStep + 1}</div>
+                                            <h4 className="text-xl font-black tracking-tight mb-4">{solution.steps[currentStep].title}</h4>
+                                            <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                                {solution.steps[currentStep].description}
+                                            </p>
+                                        </div>
+
+                                        <div className="p-6 bg-muted/50 rounded-2xl border border-border/50 relative overflow-hidden group">
+                                            <div className="absolute -right-2 -top-2 opacity-5 group-hover:scale-110 transition-transform">
+                                                <Lightbulb className="w-16 h-16 text-primary" />
+                                            </div>
+                                            <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3">Why this specifically?</div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed font-medium italic">
+                                                &quot;{solution.steps[currentStep].reasoning}&quot;
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                                <div className="p-6 border-t border-border bg-card/50 flex items-center justify-between">
+                                    <button
+                                        onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+                                        disabled={currentStep === 0}
+                                        className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground disabled:opacity-30 flex items-center gap-2"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                        Back
+                                    </button>
+                                    <div className="flex gap-1">
+                                        {solution.steps.map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={clsx(
+                                                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                                    i === currentStep ? "bg-primary w-4" : "bg-muted"
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (currentStep < solution.steps.length - 1) {
+                                                setCurrentStep(prev => prev + 1);
+                                            } else {
+                                                setShowSolution(false);
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-primary text-primary-foreground text-xs font-black rounded-xl uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center gap-2"
+                                    >
+                                        {currentStep < solution.steps.length - 1 ? 'Next' : 'Finish'}
+                                        {currentStep < solution.steps.length - 1 && <ArrowRight className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* AI Hint Overlay */}
+                    <AnimatePresence>
+                        {aiHint && (
+                            <motion.div
+                                initial={{ y: 50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 50, opacity: 0 }}
+                                className="absolute top-24 right-8 w-[350px] bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 shadow-2xl rounded-2xl p-6 z-[55]"
+                            >
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-indigo-500/20 rounded-lg">
+                                        <Sparkles className="w-4 h-4 text-indigo-500" />
+                                    </div>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500">AI Architect Hint</h3>
+                                    <button onClick={() => setAiHint(null)} className="ml-auto p-1.5 hover:bg-indigo-500/10 rounded-full transition-colors">
+                                        <X className="w-3 h-3 text-indigo-500" />
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    {aiHint.split('\n').filter(line => line.trim()).map((line, i) => (
+                                        <div key={i} className="flex gap-3 items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                                            <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+                                                {line.replace(/^[•\s*-]+/, '').trim()}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-indigo-500/10 text-[10px] text-indigo-500/70 font-bold italic">
+                                    &quot;Keep designing, you&apos;re getting there!&quot;
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
