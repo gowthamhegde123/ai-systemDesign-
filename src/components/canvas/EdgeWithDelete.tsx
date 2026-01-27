@@ -6,7 +6,6 @@ import {
     getSmoothStepPath,
     getStraightPath,
     EdgeProps,
-    useReactFlow,
 } from 'reactflow';
 import { X } from 'lucide-react';
 import { useStore } from '@/lib/hooks/useStore';
@@ -21,10 +20,9 @@ export const EdgeWithDelete = ({
     targetPosition,
     style = {},
     markerEnd,
-    data,
     ...props
 }: EdgeProps) => {
-    const type = (props as any).type;
+    const type = props.type || 'default';
     const { onEdgesChange } = useStore();
 
     let edgePath = '';

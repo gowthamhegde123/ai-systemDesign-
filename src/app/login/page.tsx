@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     BrainCircuit, Github, Mail, Lock,
-    ArrowRight, Sparkles, ChevronLeft,
+    ArrowRight, ChevronLeft,
     Chrome, User, Hash
 } from 'lucide-react';
 import Link from 'next/link';
@@ -64,8 +64,8 @@ export default function AuthPage() {
 
             setSuccess('Account created! You can now log in.');
             setMode('login');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -88,8 +88,8 @@ export default function AuthPage() {
 
             setSuccess('Reset code sent to your email.');
             setMode('reset');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -112,8 +112,8 @@ export default function AuthPage() {
 
             setSuccess('Password reset successfully! You can now log in.');
             setMode('login');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -346,7 +346,7 @@ export default function AuthPage() {
                                 onClick={() => setMode('signup')}
                                 className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
                             >
-                                Don't have an account? <span className="text-primary underline underline-offset-4">Sign up for free</span>
+                                Don&apos;t have an account? <span className="text-primary underline underline-offset-4">Sign up for free</span>
                             </button>
                         )}
                         {mode !== 'login' && (

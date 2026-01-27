@@ -48,7 +48,7 @@ const handler = NextAuth({
         signIn: '/login',
     },
     callbacks: {
-        async signIn({ user, account, profile }) {
+        async signIn({ user, account }) {
             if (account?.provider === 'google' || account?.provider === 'github') {
                 const { data: existingUser } = await supabase
                     .from('users')
@@ -66,7 +66,7 @@ const handler = NextAuth({
                     });
                 } else {
                     // Link account if not linked
-                    const updateData: any = {};
+                    const updateData: Record<string, string> = {};
                     if (account.provider === 'google' && !existingUser.google_id) updateData.google_id = user.id;
                     if (account.provider === 'github' && !existingUser.github_id) updateData.github_id = user.id;
 
@@ -78,15 +78,17 @@ const handler = NextAuth({
             return true;
         },
         async session({ session, token }) {
-            if (session.user) {
-                (session.user as any).id = token.sub;
-                (session.user as any).username = token.username;
+            if (session.user && token.sub) {
+                session.user.id = token.sub;
+                if (token.username && typeof token.username === 'string') {
+                    session.user.username = token.username;
+                }
             }
             return session;
         },
         async jwt({ token, user }) {
-            if (user) {
-                token.username = (user as any).username;
+            if (user && 'username' in user) {
+                token.username = user.username;
             }
             return token;
         }

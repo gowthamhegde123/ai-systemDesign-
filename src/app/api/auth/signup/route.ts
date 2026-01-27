@@ -49,8 +49,8 @@ export async function POST(req: Request) {
         if (error) throw error;
 
         return NextResponse.json({ message: 'User created successfully', user: data });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Signup error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
     }
 }

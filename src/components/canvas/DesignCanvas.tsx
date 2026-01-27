@@ -6,9 +6,6 @@ import ReactFlow, {
     Controls,
     ReactFlowProvider,
     Node,
-    Edge,
-    Connection,
-    addEdge,
     ReactFlowInstance,
     Panel,
     MiniMap,
@@ -22,7 +19,7 @@ import { Toolbar } from './Toolbar';
 import { NodeType } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import {
-    Sun, Moon, Trash2, Maximize,
+    Sun, Moon, Trash2,
     MousePointer2, Share2, Layers,
     ArrowUpRight, Zap
 } from 'lucide-react';
@@ -58,17 +55,6 @@ const DesignCanvasContent = () => {
         setEdgeType,
         clearCanvas
     } = useStore();
-
-    React.useEffect(() => {
-        setMounted(true);
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [theme]);
-
-    if (!mounted) return null;
 
     const onDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -107,6 +93,17 @@ const DesignCanvasContent = () => {
         [reactFlowInstance, addNode]
     );
 
+    React.useEffect(() => {
+        setMounted(true);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
+
+    if (!mounted) return null;
+
     return (
         <div className={clsx("flex h-full w-full transition-colors duration-500", theme === 'dark' ? 'dark' : '')}>
             <Toolbar />
@@ -126,7 +123,7 @@ const DesignCanvasContent = () => {
                     className="bg-background"
 
                     connectionLineStyle={{ stroke: theme === 'dark' ? '#3b82f6' : '#2563eb', strokeWidth: 2 }}
-                    // @ts-ignore
+                    // @ts-expect-error - ReactFlow typing doesn't include all edge types
                     connectionLineType={edgeType}
                     defaultEdgeOptions={{
                         type: edgeType,

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  ArrowRight, Server, Shield, Zap,
+  ArrowRight, Server, Zap,
   BrainCircuit, Globe, Layers, Trophy,
   MousePointer2, Sparkles, ChevronRight
 } from 'lucide-react';
@@ -23,8 +23,6 @@ export default function Home() {
     PROBLEMS.find(p => p.id === selectedProblemId),
     [selectedProblemId]
   );
-
-  const featuredProblems = PROBLEMS.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-accent/30">
