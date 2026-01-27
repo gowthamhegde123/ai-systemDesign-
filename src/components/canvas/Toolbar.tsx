@@ -8,7 +8,6 @@ import {
     Smartphone, Radio, Key, Eye, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { clsx } from 'clsx';
 
 interface Tool {
     type: NodeType;

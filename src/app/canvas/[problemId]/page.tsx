@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DesignCanvas } from '@/components/canvas/DesignCanvas';
 import { useStore } from '@/lib/hooks/useStore';
 import { AIAnalysisResult } from '@/types';
 import { PROBLEMS } from '@/lib/data/problems';
 import {
-    Play, CheckCircle, AlertCircle, Loader2,
-    ChevronLeft, Send, Search as SearchIcon,
-    Trophy, Sparkles, BrainCircuit, History,
-    ArrowRight, Info, Maximize, BookOpen, MessageSquareText, X, Map, Lightbulb
+    CheckCircle, AlertCircle, Loader2,
+    ChevronLeft, Send,
+    Sparkles, BrainCircuit,
+    ArrowRight, Info, BookOpen, MessageSquareText, X, Map, Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -29,7 +29,6 @@ export default function CanvasPage() {
 
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<AIAnalysisResult | null>(null);
-    const [showRequirements, setShowRequirements] = useState(true);
     const [solution, setSolution] = useState<ProblemSolution | null>(null);
     const [showSolution, setShowSolution] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
@@ -292,9 +291,9 @@ export default function CanvasPage() {
                             <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
                                 <BrainCircuit className="w-24 h-24 text-primary" />
                             </div>
-                            <h4 className="text-xs font-black text-primary uppercase tracking-widest mb-3">Architect's Tip</h4>
+                            <h4 className="text-xs font-black text-primary uppercase tracking-widest mb-3">Architect&apos;s Tip</h4>
                             <p className="text-[11px] text-foreground/70 leading-relaxed font-medium">
-                                For high-throughput systems, consider using a **Message Queue** to decouple services and **Caching** to reduce database load.
+                                For high-throughput systems, consider using a <strong>Message Queue</strong> to decouple services and <strong>Caching</strong> to reduce database load.
                             </p>
                         </motion.div>
                     </div>
@@ -341,14 +340,14 @@ export default function CanvasPage() {
                                 </div>
 
                                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed font-medium italic">
-                                    "{result.feedback}"
+                                    &ldquo;{result.feedback}&rdquo;
                                 </p>
 
                                 {result.suggestions && result.suggestions.length > 0 && (
                                     <div className="space-y-3 pt-4 border-t border-border">
                                         <div className="flex items-center gap-2">
                                             <Sparkles className="w-3 h-3 text-primary" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Architect's Suggestions</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Architect&apos;s Suggestions</p>
                                         </div>
                                         <ul className="space-y-2">
                                             {result.suggestions.map((s, i) => (
