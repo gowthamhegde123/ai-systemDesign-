@@ -40,8 +40,8 @@ export async function POST(req: Request) {
         await supabase.from('password_resets').delete().eq('email', email);
 
         return NextResponse.json({ message: 'Password reset successfully' });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Reset password error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to reset password. Please try again.' }, { status: 500 });
     }
 }

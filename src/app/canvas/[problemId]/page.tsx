@@ -9,8 +9,8 @@ import { PROBLEMS } from '@/lib/data/problems';
 import {
     CheckCircle, AlertCircle, Loader2,
     ChevronLeft, Send,
-    Sparkles, BrainCircuit,
-    ArrowRight, Info, BookOpen, MessageSquareText, X, Map, Lightbulb
+    Sparkles, BrainCircuit, History,
+    ArrowRight, Info, BookOpen, MessageSquareText, X, Map, Lightbulb, Maximize
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';

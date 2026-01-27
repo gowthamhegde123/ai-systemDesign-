@@ -9,9 +9,9 @@ import { SystemDesignQuestion } from '@/lib/data/system-design-questions';
 import { AIAnalysisResult } from '@/types';
 import {
   CheckCircle2, AlertCircle, Loader2,
-  ChevronLeft, Send, Search as SearchIcon,
-  Trophy, Sparkles, BrainCircuit, History,
-  ArrowRight, Info, Maximize, Clock, Users, Code, Target, Lightbulb, Wrench, MessageSquareText,
+  ChevronLeft, Send,
+  Trophy, Sparkles, BrainCircuit,
+  ArrowRight, Info, Clock, Users, Code, Target, Lightbulb, Wrench, MessageSquareText,
   Timer, Rocket, Star, PartyPopper, Zap, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

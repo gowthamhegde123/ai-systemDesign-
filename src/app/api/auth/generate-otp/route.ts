@@ -38,8 +38,8 @@ export async function POST(req: Request) {
             code, // Send code to frontend for immediate email
             email 
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Generate OTP error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to generate verification code.' }, { status: 500 });
     }
 }

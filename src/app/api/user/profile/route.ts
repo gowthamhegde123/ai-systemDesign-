@@ -2,7 +2,22 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
 // Mock profile data - in a real app, this would be stored in a database
-const mockProfiles: Record<string, any> = {
+interface ProfileData {
+    name: string;
+    role: string;
+    location?: string;
+    bio?: string;
+    avatar?: string;
+    socialLinks?: {
+        github?: string;
+        twitter?: string;
+        linkedin?: string;
+        website?: string;
+    };
+    updatedAt?: string;
+}
+
+const mockProfiles: Record<string, ProfileData> = {
   'default': {
     name: 'System Architect',
     role: 'Senior System Design Engineer',

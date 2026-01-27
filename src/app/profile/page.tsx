@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-    User, Camera, Shield, Award, Trophy, Target, Zap, BrainCircuit,
-    Sparkles, Calendar, Clock, TrendingUp, Star, Medal, Crown,
-    CheckCircle2, Lock, Mail, Settings, ChevronRight, ArrowLeft,
-    Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, X, LogOut
+    User, Shield, Award, Trophy, Target, Zap, BrainCircuit,
+    Calendar, TrendingUp, Star, Medal, Crown,
+    CheckCircle2, Lock, Settings, ChevronRight, ArrowLeft,
+    Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, LogOut
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { clsx } from 'clsx';
@@ -403,14 +403,14 @@ export default function ProfilePage() {
                         {/* Tab Navigation */}
                         <div className="flex gap-2 p-1 bg-muted/30 rounded-2xl">
                             {[
-                                { id: 'overview', label: 'Overview', icon: <User className="w-4 h-4" /> },
-                                { id: 'activity', label: 'Activity', icon: <Calendar className="w-4 h-4" /> },
-                                { id: 'achievements', label: 'Achievements', icon: <Trophy className="w-4 h-4" /> },
-                                { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+                                { id: 'overview' as const, label: 'Overview', icon: <User className="w-4 h-4" /> },
+                                { id: 'activity' as const, label: 'Activity', icon: <Calendar className="w-4 h-4" /> },
+                                { id: 'achievements' as const, label: 'Achievements', icon: <Trophy className="w-4 h-4" /> },
+                                { id: 'settings' as const, label: 'Settings', icon: <Settings className="w-4 h-4" /> },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() => setActiveTab(tab.id)}
                                     className={clsx(
                                         'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all',
                                         activeTab === tab.id
