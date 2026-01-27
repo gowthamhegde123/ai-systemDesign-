@@ -47,7 +47,7 @@ export default function QuestionsPage() {
     const categoryFromUrl = searchParams.get('category') || '';
     setSelectedCategory(categoryFromUrl);
     setFilters(prev => ({ ...prev, category: categoryFromUrl }));
-    
+
     fetchMeta();
   }, [searchParams]);
 
@@ -72,7 +72,7 @@ export default function QuestionsPage() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
-      
+
       const response = await fetch(`/api/questions?${params}`);
       const data: QuestionsResponse = await response.json();
       setQuestions(data.questions);
@@ -145,7 +145,7 @@ export default function QuestionsPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">
-            <Link 
+            <Link
               href="/"
               className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
             >
@@ -153,7 +153,7 @@ export default function QuestionsPage() {
               <span className="font-medium">Back to Home</span>
             </Link>
           </div>
-          
+
           <div className="text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -163,7 +163,7 @@ export default function QuestionsPage() {
               <BrainCircuit className="w-4 h-4" />
               <span>System Design Mastery</span>
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -178,12 +178,12 @@ export default function QuestionsPage() {
               transition={{ delay: 0.2 }}
               className="text-xl text-muted-foreground mb-6 font-medium"
             >
-              {selectedCategory 
+              {selectedCategory
                 ? `Explore ${questions.length} questions in ${selectedCategory}`
                 : `Master system design with ${meta.totalQuestions} carefully curated questions`
               }
             </motion.p>
-            
+
             {/* Stats */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -317,13 +317,13 @@ export default function QuestionsPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Gradient Background */}
                   <div className={clsx(
                     "absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300",
                     isQuestionSolved(question.id) && "from-green-500/5"
                   )} />
-                  
+
                   {/* Header */}
                   <div className="mb-4 relative z-10">
                     <div className="flex items-start justify-between mb-3">
@@ -339,7 +339,7 @@ export default function QuestionsPage() {
                         </span>
                       </div>
                     </div>
-                    
+
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(question.category)}`}>
                       {question.category}
                     </span>
@@ -412,14 +412,17 @@ export default function QuestionsPage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between text-sm pt-4 border-t border-border relative z-10">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">{question.estimatedTime}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-primary group-hover:text-primary/80 font-black text-xs uppercase tracking-widest">
-                      <span>{isQuestionSolved(question.id) ? 'Solved' : 'Start Solving'}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <div className="space-y-3 pt-4 border-t border-border relative z-10">
+                    {/* Start Solving */}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">{question.estimatedTime}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-primary group-hover:text-primary/80 font-black text-xs uppercase tracking-widest">
+                        <span>{isQuestionSolved(question.id) ? 'Solved' : 'Start Solving'}</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
 

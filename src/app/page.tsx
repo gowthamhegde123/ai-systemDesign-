@@ -143,7 +143,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
-            Practice designing scalable systems with 29 curated questions on a professional canvas.
+            Practice designing scalable systems with 540+ curated questions on a professional canvas.
             Get instant, high-fidelity feedback from our AI architect on your designs.
           </motion.p>
 
@@ -190,8 +190,8 @@ export default function Home() {
               },
               {
                 icon: <Trophy className="w-8 h-8 text-yellow-500" />,
-                title: "29 Curated Questions",
-                desc: "Comprehensive system design questions across 10 categories with detailed requirements and learning outcomes."
+                title: "540+ Curated Questions",
+                desc: "Comprehensive system design questions across 15+ categories with detailed requirements and learning outcomes."
               }
             ].map((feature, i) => (
               <motion.div
@@ -233,7 +233,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="text-4xl md:text-6xl font-black tracking-tight mb-6"
             >
-              29 Curated Questions
+              540+ Curated Questions
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -242,7 +242,7 @@ export default function Home() {
               transition={{ delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed"
             >
-              Master system design with carefully curated questions from industry experts. 
+              Master system design with carefully curated questions from industry experts.
               Each question includes detailed requirements, learning outcomes, and recommended tech stacks.
             </motion.p>
           </div>
@@ -252,7 +252,7 @@ export default function Home() {
             {[
               {
                 title: "Storage & Databases",
-                count: 5,
+                count: "60+",
                 description: "Distributed caches, KV stores, and database systems",
                 icon: <Server className="w-6 h-6" />,
                 color: "from-blue-500 to-cyan-500",
@@ -260,7 +260,7 @@ export default function Home() {
               },
               {
                 title: "Real-time Systems",
-                count: 3,
+                count: "50+",
                 description: "Live updates, presence, and real-time communication",
                 icon: <Zap className="w-6 h-6" />,
                 color: "from-yellow-500 to-orange-500",
@@ -268,7 +268,7 @@ export default function Home() {
               },
               {
                 title: "Infrastructure",
-                count: 4,
+                count: "70+",
                 description: "Load balancers, schedulers, and core infrastructure",
                 icon: <Layers className="w-6 h-6" />,
                 color: "from-purple-500 to-pink-500",
@@ -276,7 +276,7 @@ export default function Home() {
               },
               {
                 title: "Content & Media",
-                count: 3,
+                count: "50+",
                 description: "Image processing, video pipelines, and content delivery",
                 icon: <Globe className="w-6 h-6" />,
                 color: "from-green-500 to-teal-500",
@@ -284,7 +284,7 @@ export default function Home() {
               },
               {
                 title: "Search & Discovery",
-                count: 3,
+                count: "50+",
                 description: "Search engines, indexing, and discovery systems",
                 icon: <BrainCircuit className="w-6 h-6" />,
                 color: "from-indigo-500 to-blue-500",
@@ -292,7 +292,7 @@ export default function Home() {
               },
               {
                 title: "E-commerce & Business",
-                count: 3,
+                count: "100+",
                 description: "Flash sales, analytics, and business-critical systems",
                 icon: <Trophy className="w-6 h-6" />,
                 color: "from-red-500 to-pink-500",
@@ -313,7 +313,7 @@ export default function Home() {
                 >
                   {/* Gradient Background */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                  
+
                   {/* Icon */}
                   <div className={`mb-6 p-4 rounded-2xl bg-gradient-to-br ${category.color} text-white w-fit group-hover:scale-110 transition-transform duration-300`}>
                     {category.icon}
@@ -332,7 +332,7 @@ export default function Home() {
                     <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
                       {category.description}
                     </p>
-                    
+
                     {/* Examples */}
                     <div className="space-y-2">
                       {category.examples.map((example, idx) => (
@@ -362,8 +362,8 @@ export default function Home() {
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
               {[
-                { label: "Total Questions", value: "29" },
-                { label: "Categories", value: "10" },
+                { label: "Total Questions", value: "540+" },
+                { label: "Categories", value: "15+" },
                 { label: "Difficulty Levels", value: "3" },
                 { label: "Avg. Time", value: "5-7h" }
               ].map((stat, i) => (

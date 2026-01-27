@@ -17,6 +17,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useStore, EdgeType } from '@/lib/hooks/useStore';
 import { CustomNode } from './CustomNodes';
+import { EdgeWithDelete } from './EdgeWithDelete';
 import { Toolbar } from './Toolbar';
 import { NodeType } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +30,14 @@ import { clsx } from 'clsx';
 
 const nodeTypes = {
     custom: CustomNode,
+};
+
+const edgeTypes = {
+    smoothstep: EdgeWithDelete,
+    step: EdgeWithDelete,
+    straight: EdgeWithDelete,
+    default: EdgeWithDelete,
+    simplebezier: EdgeWithDelete,
 };
 
 const DesignCanvasContent = () => {
@@ -109,13 +118,13 @@ const DesignCanvasContent = () => {
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
                     onInit={setReactFlowInstance}
                     onDrop={onDrop}
                     onDragOver={onDragOver}
                     fitView
                     className="bg-background"
-                    // @ts-ignore - colorMode is available in React Flow 11+ but might not be in the types
-                    colorMode={theme}
+
                     connectionLineStyle={{ stroke: theme === 'dark' ? '#3b82f6' : '#2563eb', strokeWidth: 2 }}
                     // @ts-ignore
                     connectionLineType={edgeType}
