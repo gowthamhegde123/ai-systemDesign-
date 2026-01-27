@@ -1,3 +1,5 @@
+import { systemDesignQuestions } from './system-design-questions';
+
 export interface SolutionStep {
   title: string;
   description: string;
@@ -788,6 +790,38 @@ export const SOLUTIONS: ProblemSolution[] = [
   }
 ];
 
-export const getSolution = (problemId: string) => {
-  return SOLUTIONS.find(s => s.problemId === problemId);
+export const getSolution = (problemId: string): ProblemSolution | null => {
+  const specificSolution = SOLUTIONS.find(s => s.problemId === problemId);
+  if (specificSolution) return specificSolution;
+
+  const question = systemDesignQuestions.find(q => q.id === problemId);
+  if (question) {
+    return {
+      problemId: question.id,
+      steps: [
+        {
+          title: 'Step 1: Requirement Analysis',
+          description: `Focus on the core requirements: ${question.coreRequirements.slice(0, 3).join(', ')}.`,
+          reasoning: 'Understanding the primary goals is essential before designing any components.'
+        },
+        {
+          title: 'Step 2: High-Level Architecture',
+          description: `Design a system that supports: ${question.highLevelRequirements.slice(0, 3).join(', ')}.`,
+          reasoning: 'Defining the high-level architecture helps in identifying the necessary components and their interactions.'
+        },
+        {
+          title: 'Step 3: Data & Storage',
+          description: 'Select appropriate databases and caching mechanisms based on the data access patterns.',
+          reasoning: `For a ${question.category} system, data consistency and availability trade-offs must be made carefully.`
+        },
+        {
+          title: 'Step 4: Detailed Design',
+          description: `Address specific challenges such as: ${question.microRequirements.slice(0, 3).join(', ')}.`,
+          reasoning: 'Handling edge cases and technical constraints is key to a robust production system.'
+        }
+      ]
+    };
+  }
+
+  return null;
 };
