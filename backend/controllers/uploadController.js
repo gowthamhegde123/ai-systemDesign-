@@ -17,11 +17,12 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   // Allow images and common file types
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|svg|json/;
+  const allowedTypes = /jpeg|jpg|png|gif|svg|json/;
+  const allowedMimes = /jpeg|jpg|png|gif|svg|json|pdf/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const mimetype = allowedMimes.test(file.mimetype);
 
-  if (mimetype && extname) {
+  if (mimetype && (extname || file.mimetype === 'application/pdf')) {
     return cb(null, true);
   } else {
     cb(new Error('Invalid file type. Only images, PDFs, SVGs and JSON files are allowed.'));
@@ -50,18 +51,17 @@ exports.uploadFile = async (req, res, next) => {
     const folder = req.body.folder || 'uploads';
     const key = `${folder}/${fileName}`;
 
-    const upload = new Upload({
+    const uploadTask = new Upload({
       client: s3Client,
       params: {
         Bucket: process.env.AWS_S3_BUCKET,
         Key: key,
         Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-        ACL: 'public-read'
+        ContentType: req.file.mimetype
       }
     });
 
-    const result = await upload.done();
+    await uploadTask.done();
 
     res.status(200).json({
       success: true,

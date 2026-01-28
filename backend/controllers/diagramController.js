@@ -102,19 +102,29 @@ exports.updateDiagram = async (req, res, next) => {
   try {
     const { diagram_data, problem_id, name } = req.body;
 
+    // Check if diagram exists and belongs to user
+    const existingDiagram = await Diagram.findById(req.params.id);
+    if (!existingDiagram) {
+      return res.status(404).json({
+        success: false,
+        message: 'Diagram not found'
+      });
+    }
+
+    // Check ownership
+    if (existingDiagram.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this diagram'
+      });
+    }
+
     const updates = {};
     if (diagram_data) updates.diagram_data = diagram_data;
     if (problem_id !== undefined) updates.problem_id = problem_id;
     if (name !== undefined) updates.name = name;
 
     const diagram = await Diagram.update(req.params.id, updates);
-
-    if (!diagram) {
-      return res.status(404).json({
-        success: false,
-        message: 'Diagram not found'
-      });
-    }
 
     res.status(200).json({
       success: true,
@@ -131,14 +141,24 @@ exports.updateDiagram = async (req, res, next) => {
 // @access  Private
 exports.deleteDiagram = async (req, res, next) => {
   try {
-    const diagram = await Diagram.delete(req.params.id);
-
-    if (!diagram) {
+    // Check if diagram exists and belongs to user
+    const existingDiagram = await Diagram.findById(req.params.id);
+    if (!existingDiagram) {
       return res.status(404).json({
         success: false,
         message: 'Diagram not found'
       });
     }
+
+    // Check ownership
+    if (existingDiagram.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this diagram'
+      });
+    }
+
+    await Diagram.delete(req.params.id);
 
     res.status(200).json({
       success: true,

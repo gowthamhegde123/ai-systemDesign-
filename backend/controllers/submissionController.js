@@ -130,6 +130,23 @@ exports.updateSubmission = async (req, res, next) => {
   try {
     const { solution, score } = req.body;
 
+    // Check if submission exists and belongs to user
+    const existingSubmission = await Submission.findById(req.params.id);
+    if (!existingSubmission) {
+      return res.status(404).json({
+        success: false,
+        message: 'Submission not found'
+      });
+    }
+
+    // Check ownership
+    if (existingSubmission.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this submission'
+      });
+    }
+
     const updates = {};
     if (solution) updates.solution = solution;
     if (score !== undefined) {
@@ -143,13 +160,6 @@ exports.updateSubmission = async (req, res, next) => {
     }
 
     const submission = await Submission.update(req.params.id, updates);
-
-    if (!submission) {
-      return res.status(404).json({
-        success: false,
-        message: 'Submission not found'
-      });
-    }
 
     res.status(200).json({
       success: true,
@@ -166,14 +176,24 @@ exports.updateSubmission = async (req, res, next) => {
 // @access  Private
 exports.deleteSubmission = async (req, res, next) => {
   try {
-    const submission = await Submission.delete(req.params.id);
-
-    if (!submission) {
+    // Check if submission exists and belongs to user
+    const existingSubmission = await Submission.findById(req.params.id);
+    if (!existingSubmission) {
       return res.status(404).json({
         success: false,
         message: 'Submission not found'
       });
     }
+
+    // Check ownership
+    if (existingSubmission.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this submission'
+      });
+    }
+
+    await Submission.delete(req.params.id);
 
     res.status(200).json({
       success: true,

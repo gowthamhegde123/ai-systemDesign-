@@ -23,6 +23,23 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
     // Check if user exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -55,6 +72,13 @@ exports.register = async (req, res, next) => {
       }
     });
   } catch (error) {
+    // Handle unique constraint violations from database
+    if (error.code === '23505') {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email or username already exists'
+      });
+    }
     next(error);
   }
 };

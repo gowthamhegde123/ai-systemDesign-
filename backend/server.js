@@ -8,6 +8,7 @@ const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
 const errorHandler = require('./middleware/errorHandler');
+const { getLeaderboard } = require('./controllers/submissionController');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -80,7 +81,7 @@ app.use('/api/diagrams', diagramRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Leaderboard route
-app.get('/api/leaderboard', submissionRoutes.getLeaderboard);
+app.get('/api/leaderboard', getLeaderboard);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -198,4 +198,3 @@ router.put('/:id', auth, updateSubmission);
 router.delete('/:id', auth, deleteSubmission);
 
 module.exports = router;
-module.exports.getLeaderboard = getLeaderboard;
