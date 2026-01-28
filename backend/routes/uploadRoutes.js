@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { uploadFile, deleteFile, upload } = require('../controllers/uploadController');
 const auth = require('../middleware/auth');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 
 /**
  * @swagger
@@ -29,7 +30,7 @@ const auth = require('../middleware/auth');
  *       400:
  *         description: No file provided
  */
-router.post('/', auth, upload.single('file'), uploadFile);
+router.post('/', auth, uploadLimiter, upload.single('file'), uploadFile);
 
 /**
  * @swagger
