@@ -10,7 +10,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
         }
 
-        // Check if email or username exists
+        // Check if email or username exists (using regular client for read operations)
         const { data: existingEmail } = await supabase
             .from('users')
             .select('id')
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Create user
+        // Create user - this will work once RLS is properly configured
         const { data, error } = await supabase
             .from('users')
             .insert({
@@ -46,7 +46,10 @@ export async function POST(req: Request) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Database error:', error);
+            throw error;
+        }
 
         return NextResponse.json({ message: 'User created successfully', user: data });
     } catch (error) {

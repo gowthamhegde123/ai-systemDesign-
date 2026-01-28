@@ -87,50 +87,26 @@ ALTER TABLE diagrams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 
 -- Users table policies
-CREATE POLICY "Users can view their own profile" ON users
-  FOR SELECT USING (auth.uid()::text = id::text OR auth.role() = 'service_role');
+CREATE POLICY "Allow public profile viewing" ON users
+  FOR SELECT USING (true);
 
 CREATE POLICY "Users can update their own profile" ON users
   FOR UPDATE USING (auth.uid()::text = id::text OR auth.role() = 'service_role');
 
-CREATE POLICY "Allow service role to insert users" ON users
-  FOR INSERT WITH CHECK (auth.role() = 'service_role' OR auth.role() = 'anon');
+CREATE POLICY "Allow anonymous user registration" ON users
+  FOR INSERT WITH CHECK (true);
 
 -- User progress policies
-CREATE POLICY "Users can view their own progress" ON user_progress
-  FOR SELECT USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can insert their own progress" ON user_progress
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can update their own progress" ON user_progress
-  FOR UPDATE USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
+CREATE POLICY "Users can manage their own progress" ON user_progress
+  FOR ALL USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
 
 -- Diagrams policies
-CREATE POLICY "Users can view their own diagrams" ON diagrams
-  FOR SELECT USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can insert their own diagrams" ON diagrams
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can update their own diagrams" ON diagrams
-  FOR UPDATE USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can delete their own diagrams" ON diagrams
-  FOR DELETE USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
+CREATE POLICY "Users can manage their own diagrams" ON diagrams
+  FOR ALL USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
 
 -- Submissions policies
-CREATE POLICY "Users can view their own submissions" ON submissions
-  FOR SELECT USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can insert their own submissions" ON submissions
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can update their own submissions" ON submissions
-  FOR UPDATE USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
-
-CREATE POLICY "Users can delete their own submissions" ON submissions
-  FOR DELETE USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
+CREATE POLICY "Users can manage their own submissions" ON submissions
+  FOR ALL USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
 
 -- ============================================
 -- Updated At Trigger Function
