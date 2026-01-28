@@ -23,7 +23,6 @@ const auth = require('../middleware/auth');
  *                 format: binary
  *               folder:
  *                 type: string
- *                 description: Optional folder name (default: uploads)
  *     responses:
  *       200:
  *         description: File uploaded successfully
@@ -46,7 +45,6 @@ router.post('/', auth, upload.single('file'), uploadFile);
  *         required: true
  *         schema:
  *           type: string
- *         description: S3 object key
  *     responses:
  *       200:
  *         description: File deleted successfully
