@@ -1,69 +1,83 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
+import { supabase } from '@/lib/supabase';
 
-// Mock user progress data - in a real app, this would be stored in a database
-const mockUserProgress = {
-  solvedQuestions: [
-    'distributed-cache',
-    'load-balancer',
-    'flash-sale',
-    'image-service',
-    'hashtag-service',
-    'user-affinity',
-    'online-offline-indicator',
-    'realtime-claps',
-    'text-search-engine',
-    'recent-searches',
-    'word-dictionary',
-    'blogging-platform',
-    'video-pipeline',
-    'near-me',
-    'file-sync',
-    'onepic',
-    'airline-checkin',
-    'counting-impressions'
-  ],
-  solvedDates: {
-    'distributed-cache': '2024-01-15',
-    'load-balancer': '2024-01-16',
-    'flash-sale': '2024-01-18',
-    'image-service': '2024-01-20',
-    'hashtag-service': '2024-01-22',
-    'user-affinity': '2024-01-25',
-    'online-offline-indicator': '2024-01-28',
-    'realtime-claps': '2024-02-01',
-    'text-search-engine': '2024-02-05',
-    'recent-searches': '2024-02-08',
-    'word-dictionary': '2024-02-12',
-    'blogging-platform': '2024-02-15',
-    'video-pipeline': '2024-02-18',
-    'near-me': '2024-02-22',
-    'file-sync': '2024-02-25',
-    'onepic': '2024-02-28',
-    'airline-checkin': '2024-03-02',
-    'counting-impressions': '2024-03-05',
-    // Recent activity for current month to show levels
-    'sql-kv': '2026-01-20',
-    'queue-consumers': '2026-01-21',
-    'realtime-db': '2026-01-21',
-    'task-scheduler': '2026-01-23',
-    'distributed-locking': '2026-01-23',
-    'search-autocomplete': '2026-01-23',
-    'api-gateway': '2026-01-25',
-    'global-id-gen': '2026-01-25',
-    'metrics-service': '2026-01-25',
-    'distributed-tracing': '2026-01-25',
-    // Activity for 2025 to show it in selector
-    'web-server-base': '2025-03-12',
-    'lb-config': '2025-03-13',
-    'cdn-setup': '2025-07-20',
-    'security-waf': '2025-07-20',
-    'monitoring-dash': '2025-11-05'
-  },
-  currentStreak: 12,
-  longestStreak: 18,
-  totalSolved: 33
-};
+// Interface for user progress data
+interface UserProgress {
+  solvedQuestions: string[];
+  solvedDates: Record<string, string>;
+  currentStreak: number;
+  longestStreak: number;
+  totalSolved: number;
+}
+
+// Calculate streak from solved dates
+function calculateStreak(solvedDates: Record<string, string>): { currentStreak: number; longestStreak: number } {
+  const dates = Object.values(solvedDates)
+    .map(d => new Date(d))
+    .sort((a, b) => b.getTime() - a.getTime()); // Sort descending
+
+  if (dates.length === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
+
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 1;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const mostRecent = new Date(dates[0]);
+  mostRecent.setHours(0, 0, 0, 0);
+  
+  // Check if the most recent activity is today or yesterday
+  const diffDays = Math.floor((today.getTime() - mostRecent.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 1) {
+    currentStreak = 1;
+    
+    for (let i = 1; i < dates.length; i++) {
+      const prevDate = new Date(dates[i - 1]);
+      const currDate = new Date(dates[i]);
+      prevDate.setHours(0, 0, 0, 0);
+      currDate.setHours(0, 0, 0, 0);
+      
+      const diff = Math.floor((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diff === 1) {
+        currentStreak++;
+        tempStreak++;
+      } else if (diff > 1) {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    
+    longestStreak = Math.max(longestStreak, tempStreak);
+  } else {
+    // Calculate longest streak from history
+    for (let i = 1; i < dates.length; i++) {
+      const prevDate = new Date(dates[i - 1]);
+      const currDate = new Date(dates[i]);
+      prevDate.setHours(0, 0, 0, 0);
+      currDate.setHours(0, 0, 0, 0);
+      
+      const diff = Math.floor((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diff === 1) {
+        tempStreak++;
+      } else if (diff > 1) {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    
+    longestStreak = Math.max(longestStreak, tempStreak);
+  }
+
+  return { currentStreak, longestStreak };
+}
 
 export async function GET() {
   try {
@@ -73,11 +87,60 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // MULTI-USER SUPPORT: In a production app, you would fetch progress 
-    // from a database using the user's email:
-    // const userProgress = await db.progress.findUnique({ where: { email: session.user.email } });
+    // Get user ID from email
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
 
-    return NextResponse.json(mockUserProgress);
+    if (!user) {
+      // Return empty progress for new users
+      return NextResponse.json({
+        solvedQuestions: [],
+        solvedDates: {},
+        currentStreak: 0,
+        longestStreak: 0,
+        totalSolved: 0
+      });
+    }
+
+    // Fetch user's progress from the database
+    const { data: progressData, error } = await supabase
+      .from('user_progress')
+      .select('question_id, solved_at')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching progress:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch progress' },
+        { status: 500 }
+      );
+    }
+
+    // Transform database data to progress format
+    const solvedQuestions: string[] = [];
+    const solvedDates: Record<string, string> = {};
+
+    if (progressData) {
+      progressData.forEach((item: { question_id: string; solved_at: string }) => {
+        solvedQuestions.push(item.question_id);
+        solvedDates[item.question_id] = item.solved_at;
+      });
+    }
+
+    const { currentStreak, longestStreak } = calculateStreak(solvedDates);
+
+    const progress: UserProgress = {
+      solvedQuestions,
+      solvedDates,
+      currentStreak,
+      longestStreak,
+      totalSolved: solvedQuestions.length
+    };
+
+    return NextResponse.json(progress);
   } catch (error) {
     console.error('Error fetching user progress:', error);
     return NextResponse.json(
@@ -91,7 +154,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession();
 
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -101,9 +164,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Question ID is required' }, { status: 400 });
     }
 
-    // In a real app, you would update the database here
-    // For now, we'll just return success
-    const today = new Date().toISOString().split('T')[0];
+    // Get user ID from email
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const today = new Date().toISOString();
+
+    // Check if already solved
+    const { data: existing } = await supabase
+      .from('user_progress')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('question_id', questionId)
+      .single();
+
+    if (existing) {
+      // Update existing record
+      await supabase
+        .from('user_progress')
+        .update({ solved_at: today })
+        .eq('id', existing.id);
+    } else {
+      // Insert new progress record
+      const { error } = await supabase
+        .from('user_progress')
+        .insert({
+          user_id: user.id,
+          question_id: questionId,
+          solved_at: today
+        });
+
+      if (error) {
+        console.error('Error saving progress:', error);
+        return NextResponse.json(
+          { error: 'Failed to save progress' },
+          { status: 500 }
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
