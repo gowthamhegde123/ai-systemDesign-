@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
+import { supabase } from '@/lib/supabase';
 
-// Mock profile data - in a real app, this would be stored in a database
+// Interface for profile data
 interface ProfileData {
     name: string;
     role: string;
@@ -17,33 +18,59 @@ interface ProfileData {
     updatedAt?: string;
 }
 
-const mockProfiles: Record<string, ProfileData> = {
-  'default': {
+// Default profile for new users
+const defaultProfile: ProfileData = {
     name: 'System Architect',
-    role: 'Senior System Design Engineer',
-    location: 'San Francisco, CA',
-    bio: 'Passionate system architect with 8+ years of experience designing scalable distributed systems. Love solving complex problems and building high-performance applications.',
+    role: 'System Design Engineer',
+    location: '',
+    bio: '',
     avatar: '',
     socialLinks: {
-      github: 'https://github.com/gowthamhegde123',
-      twitter: 'https://twitter.com/gowthamhegde',
-      linkedin: 'https://linkedin.com/in/gowthamhegde',
-      website: 'https://gowthamhegde.dev'
+      github: '',
+      twitter: '',
+      linkedin: '',
+      website: ''
     }
-  }
 };
 
 export async function GET() {
   try {
     const session = await getServerSession();
     
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In a real app, you would query the database by user ID
-    const userId = session.user?.email || 'default';
-    const profile = mockProfiles[userId] || mockProfiles['default'];
+    // Fetch user profile from Supabase database
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, full_name, username, bio, location, avatar_url, github_url, twitter_url, linkedin_url, website_url, role, updated_at')
+      .eq('email', session.user.email)
+      .single();
+
+    if (error || !user) {
+      // Return default profile if user not found in database
+      return NextResponse.json({
+        ...defaultProfile,
+        name: session.user.name || defaultProfile.name
+      });
+    }
+
+    // Transform database fields to profile format
+    const profile: ProfileData = {
+      name: user.full_name || session.user.name || defaultProfile.name,
+      role: user.role || defaultProfile.role,
+      location: user.location || '',
+      bio: user.bio || '',
+      avatar: user.avatar_url || session.user.image || '',
+      socialLinks: {
+        github: user.github_url || '',
+        twitter: user.twitter_url || '',
+        linkedin: user.linkedin_url || '',
+        website: user.website_url || ''
+      },
+      updatedAt: user.updated_at
+    };
 
     return NextResponse.json(profile);
   } catch (error) {
@@ -59,7 +86,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession();
     
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -70,17 +97,65 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and role are required' }, { status: 400 });
     }
 
-    // In a real app, you would save to the database
-    const userId = session.user?.email || 'default';
-    mockProfiles[userId] = {
-      ...profileData,
-      updatedAt: new Date().toISOString()
+    // First check if user exists in the database
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    // Prepare update data
+    const updateData = {
+      full_name: profileData.name,
+      role: profileData.role,
+      bio: profileData.bio || '',
+      location: profileData.location || '',
+      avatar_url: profileData.avatar || '',
+      github_url: profileData.socialLinks?.github || '',
+      twitter_url: profileData.socialLinks?.twitter || '',
+      linkedin_url: profileData.socialLinks?.linkedin || '',
+      website_url: profileData.socialLinks?.website || '',
+      updated_at: new Date().toISOString()
     };
+
+    let result;
+    
+    if (existingUser) {
+      // Update existing user
+      result = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('email', session.user.email)
+        .select()
+        .single();
+    } else {
+      // Create new user profile
+      result = await supabase
+        .from('users')
+        .insert({
+          email: session.user.email,
+          username: session.user.email?.split('@')[0] + Math.floor(Math.random() * 1000),
+          ...updateData
+        })
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('Database error:', result.error);
+      return NextResponse.json(
+        { error: 'Failed to update profile' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
-      profile: mockProfiles[userId]
+      profile: {
+        ...profileData,
+        updatedAt: updateData.updated_at
+      }
     });
   } catch (error) {
     console.error('Error updating profile:', error);

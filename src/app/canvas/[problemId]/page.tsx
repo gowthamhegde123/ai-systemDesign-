@@ -119,9 +119,32 @@ export default function CanvasPage() {
     };
 
     const handleSubmit = async () => {
-        if (!isPassed) return;
-        setSubmitted(true);
-        alert('Congratulations! Your design has been submitted successfully.');
+        if (!isPassed || !currentProblem || !result) return;
+        
+        try {
+            // Save the submission to the database
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    problem_id: currentProblem.id,
+                    solution: JSON.stringify({ nodes, edges }),
+                    score: result.score,
+                    diagram_data: { nodes, edges }
+                })
+            });
+
+            if (response.ok) {
+                setSubmitted(true);
+                alert('Congratulations! Your design has been submitted successfully.');
+            } else {
+                const data = await response.json();
+                alert(`Submission failed: ${data.error || 'Please try again.'}`);
+            }
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert('Submission failed. Please try again.');
+        }
     };
 
     if (!currentProblem) {
