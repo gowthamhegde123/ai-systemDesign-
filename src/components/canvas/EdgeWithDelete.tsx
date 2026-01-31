@@ -21,7 +21,7 @@ export const EdgeWithDelete = ({
     style = {},
     markerEnd,
     ...props
-}: EdgeProps) => {
+}: EdgeProps & { type?: string }) => {
     const type = props.type || 'default';
     const { onEdgesChange } = useStore();
 

@@ -45,7 +45,7 @@ export async function GET(req: Request) {
             query = query.limit(parseInt(limit));
         }
         if (offset) {
-            query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit) || 10) - 1);
+            query = query.range(parseInt(offset), parseInt(offset) + (limit ? parseInt(limit) : 10) - 1);
         }
 
         query = query.order('created_at', { ascending: false });
