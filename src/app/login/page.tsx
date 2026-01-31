@@ -62,8 +62,14 @@ export default function AuthPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Something went wrong');
 
-            setSuccess('Account created! You can now log in.');
-            setMode('login');
+            // Store email for onboarding
+            localStorage.setItem('signupEmail', email);
+            
+            // Redirect to onboarding instead of login
+            setSuccess('Account created! Setting up your profile...');
+            setTimeout(() => {
+                router.push('/onboarding');
+            }, 1000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {

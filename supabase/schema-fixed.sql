@@ -24,14 +24,24 @@ CREATE TABLE IF NOT EXISTS users (
   job_title VARCHAR(255),
   experience_level VARCHAR(50) DEFAULT 'Beginner', -- Beginner, Intermediate, Advanced, Expert
   
-  -- Social Links
+  -- OAuth Provider IDs
   github_id VARCHAR(100),
   google_id VARCHAR(100),
+  linkedin_id VARCHAR(100),
+  
+  -- Social Links
   github_url TEXT,
-  twitter_url TEXT,
   linkedin_url TEXT,
+  twitter_url TEXT,
+  instagram_url TEXT,
   website_url TEXT,
   portfolio_url TEXT,
+  
+  -- OAuth Profile Data
+  oauth_provider VARCHAR(50), -- 'google', 'github', 'linkedin'
+  oauth_avatar_url TEXT, -- Profile picture from OAuth provider
+  oauth_name VARCHAR(255), -- Name from OAuth provider
+  oauth_username VARCHAR(100), -- Username from OAuth provider
   
   -- User Stats (automatically calculated)
   problems_solved INTEGER DEFAULT 0,
@@ -113,6 +123,19 @@ CREATE TABLE IF NOT EXISTS user_progress (
 );
 
 -- ============================================
+-- Diagrams Table
+-- ============================================
+CREATE TABLE IF NOT EXISTS diagrams (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) DEFAULT 'Untitled Diagram',
+  problem_id UUID REFERENCES problems(id),
+  diagram_data JSONB NOT NULL DEFAULT '{"nodes": [], "edges": []}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- Enhanced Submissions Table
 -- ============================================
 CREATE TABLE IF NOT EXISTS submissions (
@@ -166,63 +189,6 @@ CREATE TABLE IF NOT EXISTS user_activity (
   activity_type VARCHAR(50) NOT NULL, -- 'login', 'problem_solved', 'submission', 'profile_updated'
   activity_data JSONB, -- Additional data about the activity
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- User Preferences Table
--- ============================================
-CREATE TABLE IF NOT EXISTS user_preferences (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
-  -- UI Preferences
-  theme VARCHAR(20) DEFAULT 'system',
-  language VARCHAR(10) DEFAULT 'en',
-  timezone VARCHAR(50) DEFAULT 'UTC',
-  
-  -- Notification Preferences
-  email_notifications BOOLEAN DEFAULT true,
-  push_notifications BOOLEAN DEFAULT true,
-  weekly_digest BOOLEAN DEFAULT true,
-  achievement_notifications BOOLEAN DEFAULT true,
-  
-  -- Privacy Preferences
-  public_profile BOOLEAN DEFAULT true,
-  show_stats BOOLEAN DEFAULT true,
-  show_activity BOOLEAN DEFAULT true,
-  show_achievements BOOLEAN DEFAULT true,
-  
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  
-  UNIQUE(user_id)
-);
-
--- ============================================
--- Diagrams Table
--- ============================================
-CREATE TABLE IF NOT EXISTS diagrams (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name VARCHAR(255) DEFAULT 'Untitled Diagram',
-  problem_id VARCHAR(255),
-  diagram_data JSONB NOT NULL DEFAULT '{"nodes": [], "edges": []}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- Submissions Table
--- ============================================
-CREATE TABLE IF NOT EXISTS submissions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  problem_id VARCHAR(255) NOT NULL,
-  solution TEXT NOT NULL,
-  score INTEGER DEFAULT 0 CHECK (score >= 0 AND score <= 100),
-  diagram_data JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -282,7 +248,6 @@ ALTER TABLE diagrams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Users table policies
 CREATE POLICY "Allow public profile viewing" ON users
@@ -327,40 +292,18 @@ CREATE POLICY "Users can view their own activity" ON user_activity
 CREATE POLICY "System can log activity" ON user_activity
   FOR INSERT WITH CHECK (auth.role() = 'service_role' OR auth.uid()::text = user_id::text);
 
--- Preferences policies
-CREATE POLICY "Users can manage their own preferences" ON user_preferences
-  FOR ALL USING (auth.uid()::text = user_id::text OR auth.role() = 'service_role');
+-- ============================================
+-- Triggers and Functions
+-- ============================================
 
--- ============================================
 -- Updated At Trigger Function
--- ============================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = CURRENT_TIMESTAMP;
   RETURN NEW;
 END;
-$$ language 'plpgsql';
-
--- Apply trigger to all tables
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at
-  BEFORE UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS update_diagrams_updated_at ON diagrams;
-CREATE TRIGGER update_diagrams_updated_at
-  BEFORE UPDATE ON diagrams
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS update_submissions_updated_at ON submissions;
-CREATE TRIGGER update_submissions_updated_at
-  BEFORE UPDATE ON submissions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- ============================================
--- Enhanced Triggers and Functions
--- ============================================
+$$ LANGUAGE plpgsql;
 
 -- Function to update user stats when problems are solved
 CREATE OR REPLACE FUNCTION update_user_stats()
@@ -374,73 +317,31 @@ BEGIN
       points = points + COALESCE((SELECT points FROM problems WHERE id = NEW.problem_id), 100),
       last_activity_date = CURRENT_DATE
     WHERE id = NEW.user_id;
-    
-    -- Update streak calculation
-    PERFORM update_user_streak(NEW.user_id);
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to calculate and update user streak
-CREATE OR REPLACE FUNCTION update_user_streak(user_uuid UUID)
-RETURNS VOID AS $$
-BEGIN
-  WITH daily_activity AS (
-    SELECT DISTINCT DATE(solved_at) as activity_date
-    FROM user_progress 
-    WHERE user_id = user_uuid AND status = 'solved' AND solved_at IS NOT NULL
-    ORDER BY activity_date DESC
-  ),
-  streak_calculation AS (
-    SELECT 
-      activity_date,
-      activity_date - LAG(activity_date, 1, activity_date) OVER (ORDER BY activity_date DESC) as gap
-    FROM daily_activity
-  ),
-  current_streak AS (
-    SELECT COUNT(*) as streak_days
-    FROM streak_calculation
-    WHERE gap <= 1 OR gap IS NULL
-  )
-  UPDATE users 
-  SET 
-    streak_days = (SELECT streak_days FROM current_streak),
-    max_streak = GREATEST(max_streak, (SELECT streak_days FROM current_streak))
-  WHERE id = user_uuid;
-END;
-$$ LANGUAGE plpgsql;
+-- Apply triggers to tables
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to log user activity
-CREATE OR REPLACE FUNCTION log_user_activity()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Log different types of activities
-  IF TG_TABLE_NAME = 'user_progress' AND NEW.status = 'solved' THEN
-    INSERT INTO user_activity (user_id, activity_type, activity_data)
-    VALUES (NEW.user_id, 'problem_solved', jsonb_build_object('problem_id', NEW.problem_id, 'score', NEW.best_score));
-  ELSIF TG_TABLE_NAME = 'submissions' THEN
-    INSERT INTO user_activity (user_id, activity_type, activity_data)
-    VALUES (NEW.user_id, 'submission', jsonb_build_object('problem_id', NEW.problem_id, 'score', NEW.score));
-  ELSIF TG_TABLE_NAME = 'users' AND OLD.updated_at != NEW.updated_at THEN
-    INSERT INTO user_activity (user_id, activity_type, activity_data)
-    VALUES (NEW.id, 'profile_updated', jsonb_build_object('fields_updated', 'profile'));
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Enhanced triggers for all tables
 DROP TRIGGER IF EXISTS update_problems_updated_at ON problems;
 CREATE TRIGGER update_problems_updated_at
   BEFORE UPDATE ON problems
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_preferences_updated_at ON user_preferences;
-CREATE TRIGGER update_preferences_updated_at
-  BEFORE UPDATE ON user_preferences
+DROP TRIGGER IF EXISTS update_diagrams_updated_at ON diagrams;
+CREATE TRIGGER update_diagrams_updated_at
+  BEFORE UPDATE ON diagrams
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_submissions_updated_at ON submissions;
+CREATE TRIGGER update_submissions_updated_at
+  BEFORE UPDATE ON submissions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger to update user stats when progress changes
@@ -448,22 +349,6 @@ DROP TRIGGER IF EXISTS trigger_update_user_stats ON user_progress;
 CREATE TRIGGER trigger_update_user_stats
   AFTER INSERT OR UPDATE ON user_progress
   FOR EACH ROW EXECUTE FUNCTION update_user_stats();
-
--- Triggers to log user activity
-DROP TRIGGER IF EXISTS trigger_log_progress_activity ON user_progress;
-CREATE TRIGGER trigger_log_progress_activity
-  AFTER INSERT OR UPDATE ON user_progress
-  FOR EACH ROW EXECUTE FUNCTION log_user_activity();
-
-DROP TRIGGER IF EXISTS trigger_log_submission_activity ON submissions;
-CREATE TRIGGER trigger_log_submission_activity
-  AFTER INSERT ON submissions
-  FOR EACH ROW EXECUTE FUNCTION log_user_activity();
-
-DROP TRIGGER IF EXISTS trigger_log_profile_activity ON users;
-CREATE TRIGGER trigger_log_profile_activity
-  AFTER UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION log_user_activity();
 
 -- ============================================
 -- Sample Data for Testing

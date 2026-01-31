@@ -1,701 +1,757 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import {
-    User, Shield, Award, Trophy, Target, Zap, BrainCircuit,
-    Calendar, TrendingUp, Star, Medal, Crown,
-    CheckCircle2, Lock, Settings, ChevronRight, ArrowLeft,
-    Github, Twitter, Linkedin, Globe, MapPin, Edit3, Save, LogOut
+import { 
+  User, 
+  MapPin, 
+  Calendar, 
+  Trophy, 
+  Target, 
+  Zap, 
+  Award,
+  Edit3,
+  Camera,
+  Github,
+  Linkedin,
+  Globe,
+  Mail,
+  Settings,
+  Plus,
+  BookOpen,
+  Clock,
+  Twitter,
+  Instagram,
+  ExternalLink,
+  Shield,
+  ShieldCheck,
+  Link as LinkIcon,
+  Briefcase,
+  Upload,
+  X,
+  LogOut
 } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
-import { clsx } from 'clsx';
 import Link from 'next/link';
-import ActivityGrid from '@/components/ActivityGrid';
-import { AvatarUpload } from '@/components/AvatarUpload';
-import { useUserProgress } from '@/lib/hooks/useUserProgress';
+import ActivityHeatmap from '@/components/ActivityHeatmap';
+import ThemeToggle from '@/components/ThemeToggle';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
+
+// Enhanced user data structure with OAuth and social accounts
+const mockUser = {
+  id: '1',
+  name: 'New User',
+  username: 'newuser',
+  email: 'user@example.com',
+  bio: '',
+  location: '',
+  joinedDate: new Date().toISOString().split('T')[0], // Today
+  profilePicture: null as string | null,
+  coverImage: null as string | null,
+  
+  // OAuth information
+  oauthProvider: null as string | null, // 'google', 'github', 'linkedin'
+  oauthAvatar: null as string | null,
+  oauthName: null as string | null,
+  isOAuthUser: false,
+  
+  stats: {
+    problemsSolved: 0,
+    totalSubmissions: 0,
+    points: 0,
+    currentStreak: 0,
+    maxStreak: 0,
+    rank: 'Beginner'
+  },
+  
+  // Enhanced social accounts with verification status
+  socialAccounts: [
+    {
+      platform: 'github',
+      username: '',
+      displayName: '',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    },
+    {
+      platform: 'linkedin',
+      username: '',
+      displayName: '',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    },
+    {
+      platform: 'twitter',
+      username: '',
+      displayName: '',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    },
+    {
+      platform: 'instagram',
+      username: '',
+      displayName: '',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    },
+    {
+      platform: 'website',
+      username: '',
+      displayName: 'Personal Website',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    },
+    {
+      platform: 'portfolio',
+      username: '',
+      displayName: 'Portfolio',
+      profileUrl: '',
+      isVerified: false,
+      isLinked: false,
+      isPublic: true
+    }
+  ]
+};
+
+// Helper function to get social platform icon
+const getSocialIcon = (platform: string, size: number = 20) => {
+  const iconProps = { size, className: "text-muted-foreground" };
+  
+  switch (platform) {
+    case 'github':
+      return <Github {...iconProps} />;
+    case 'linkedin':
+      return <Linkedin {...iconProps} />;
+    case 'twitter':
+      return <Twitter {...iconProps} />;
+    case 'instagram':
+      return <Instagram {...iconProps} />;
+    case 'website':
+      return <Globe {...iconProps} />;
+    case 'portfolio':
+      return <Briefcase {...iconProps} />;
+    default:
+      return <LinkIcon {...iconProps} />;
+  }
+};
+
+// Helper function to get platform display name
+const getPlatformDisplayName = (platform: string) => {
+  const names: Record<string, string> = {
+    github: 'GitHub',
+    linkedin: 'LinkedIn',
+    twitter: 'Twitter',
+    instagram: 'Instagram',
+    website: 'Website',
+    portfolio: 'Portfolio'
+  };
+  return names[platform] || platform;
+};
+
+// Helper function to validate social URLs
+const validateSocialUrl = (platform: string, url: string): boolean => {
+  if (!url) return true; // Empty is valid
+  
+  const patterns: Record<string, RegExp> = {
+    github: /^https?:\/\/(www\.)?github\.com\/[\w-]+\/?$/,
+    linkedin: /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/,
+    twitter: /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/[\w-]+\/?$/,
+    instagram: /^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/,
+    website: /^https?:\/\/.+/,
+    portfolio: /^https?:\/\/.+/
+  };
+  
+  return patterns[platform]?.test(url) ?? /^https?:\/\/.+/.test(url);
+};
+
+// Helper function to extract username from social URL
+const extractUsernameFromUrl = (platform: string, url: string): string => {
+  if (!url) return '';
+  
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    
+    switch (platform) {
+      case 'github':
+        return pathname.split('/')[1] || '';
+      case 'linkedin':
+        return pathname.split('/in/')[1]?.replace('/', '') || '';
+      case 'twitter':
+        return pathname.split('/')[1] || '';
+      case 'instagram':
+        return pathname.split('/')[1] || '';
+      default:
+        return urlObj.hostname;
+    }
+  } catch {
+    return '';
+  }
+};
+
+const mockActivityData: any[] = [];
+
+const mockAchievements: any[] = [];
+
+const mockProgress = [
+  { category: 'Distributed Systems', solved: 0, total: 12, avgScore: 0 },
+  { category: 'Database Design', solved: 0, total: 8, avgScore: 0 },
+  { category: 'Caching', solved: 0, total: 6, avgScore: 0 },
+  { category: 'Load Balancing', solved: 0, total: 7, avgScore: 0 },
+  { category: 'Security', solved: 0, total: 5, avgScore: 0 },
+  { category: 'Microservices', solved: 0, total: 10, avgScore: 0 },
+  { category: 'Message Queues', solved: 0, total: 6, avgScore: 0 },
+  { category: 'API Design', solved: 0, total: 12, avgScore: 0 }
+];
 
 export default function ProfilePage() {
-    const { data: session } = useSession();
-    const { progress } = useUserProgress();
-    const [isEditing, setIsEditing] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'achievements' | 'settings'>('overview');
-    const [profileData, setProfileData] = useState({
-        name: session?.user?.name || 'System Architect',
-        role: 'Senior System Design Engineer',
-        location: 'San Francisco, CA',
-        bio: 'Passionate system architect with 8+ years of experience designing scalable distributed systems. Love solving complex problems and building high-performance applications.',
-        socialLinks: {
-            github: 'https://github.com/gowthamhegde123',
-            twitter: 'https://twitter.com/gowthamhegde',
-            linkedin: 'https://linkedin.com/in/gowthamhegde',
-            website: 'https://gowthamhegde.dev'
-        },
-        avatar: session?.user?.image || ''
-    });
+  const { toast, showToast, hideToast } = useToast();
+  const [editedUser, setEditedUser] = useState(mockUser);
+  const profilePictureInputRef = useRef<HTMLInputElement>(null);
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
 
-    const handleSaveProfile = () => {
-        // In a real app, this would save to the database
-        console.log('Saving profile data:', profileData);
-        setIsEditing(false);
-        // You could add an API call here to save the data
-    };
-
-    const handleInputChange = (field: string, value: string) => {
-        setProfileData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    const handleSocialLinkChange = (platform: string, value: string) => {
-        setProfileData(prev => ({
-            ...prev,
-            socialLinks: {
-                ...prev.socialLinks,
-                [platform]: value
-            }
-        }));
-    };
-
-    const handleAvatarChange = (imageUrl: string) => {
-        setProfileData(prev => ({
-            ...prev,
-            avatar: imageUrl
-        }));
-    };
-
-    if (!session) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                        <User className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Sign in required</h3>
-                    <p className="text-muted-foreground mb-6">Please sign in to view your profile</p>
-                    <Link
-                        href="/login"
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors"
-                    >
-                        Sign In
-                    </Link>
-                </div>
-            </div>
-        );
+  // Load user data from localStorage on mount
+  useEffect(() => {
+    const savedUserData = localStorage.getItem('userProfileData');
+    if (savedUserData) {
+      try {
+        const parsedData = JSON.parse(savedUserData);
+        setEditedUser(parsedData);
+      } catch (error) {
+        console.error('Error loading saved profile data:', error);
+      }
     }
+  }, []);
 
-    const achievements = [
-        {
-            id: 1,
-            title: 'First Steps',
-            description: 'Solved your first system design problem',
-            icon: <Target className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 1,
-            date: (progress?.totalSolved || 0) >= 1 ? '2024-01-15' : null,
-            threshold: 1
-        },
-        {
-            id: 2,
-            title: 'Problem Solver',
-            description: 'Solved 5 system design problems',
-            icon: <CheckCircle2 className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 5,
-            date: (progress?.totalSolved || 0) >= 5 ? '2024-01-20' : null,
-            threshold: 5
-        },
-        {
-            id: 3,
-            title: 'Architect',
-            description: 'Solved 10 system design problems',
-            icon: <BrainCircuit className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 10,
-            date: (progress?.totalSolved || 0) >= 10 ? '2024-02-01' : null,
-            threshold: 10
-        },
-        {
-            id: 4,
-            title: 'System Master',
-            description: 'Solved 15 system design problems',
-            icon: <Award className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 15,
-            date: (progress?.totalSolved || 0) >= 15 ? '2024-02-15' : null,
-            threshold: 15
-        },
-        {
-            id: 5,
-            title: 'Design Expert',
-            description: 'Solved 20 system design problems',
-            icon: <Trophy className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 20,
-            date: (progress?.totalSolved || 0) >= 20 ? '2024-02-20' : null,
-            threshold: 20
-        },
-        {
-            id: 6,
-            title: 'Streak Master',
-            description: 'Maintain a 7-day solving streak',
-            icon: <Zap className="w-6 h-6" />,
-            unlocked: (progress?.currentStreak || 0) >= 7,
-            date: (progress?.currentStreak || 0) >= 7 ? '2024-03-01' : null,
-            threshold: 7,
-            type: 'streak'
-        },
-        {
-            id: 7,
-            title: 'Speed Demon',
-            description: 'Solve 3 problems in one day',
-            icon: <TrendingUp className="w-6 h-6" />,
-            unlocked: false,
-            date: null,
-            threshold: 3,
-            type: 'daily'
-        },
-        {
-            id: 8,
-            title: 'Perfectionist',
-            description: 'Get 100% score on 5 problems',
-            icon: <Star className="w-6 h-6" />,
-            unlocked: false,
-            date: null,
-            threshold: 5,
-            type: 'score'
-        },
-        {
-            id: 9,
-            title: 'Category Master',
-            description: 'Solve problems from all categories',
-            icon: <Medal className="w-6 h-6" />,
-            unlocked: false,
-            date: null,
-            threshold: 10,
-            type: 'category'
-        },
-        {
-            id: 10,
-            title: 'Legend',
-            description: 'Solve all 29 system design problems',
-            icon: <Crown className="w-6 h-6" />,
-            unlocked: (progress?.totalSolved || 0) >= 29,
-            date: (progress?.totalSolved || 0) >= 29 ? '2024-03-15' : null,
-            threshold: 29
-        },
-    ];
+  // Save to localStorage whenever editedUser changes (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('userProfileData', JSON.stringify(editedUser));
+    }, 500);
 
-    const skillCategories = [
-        {
-            name: 'Storage & Databases',
-            skills: ['Distributed Cache', 'Key-Value Stores', 'SQL Optimization', 'NoSQL Design'],
-            progress: 85,
-            solved: 4,
-            total: 5
-        },
-        {
-            name: 'Real-time Systems',
-            skills: ['WebSockets', 'Event Streaming', 'Live Updates', 'Presence Systems'],
-            progress: 67,
-            solved: 2,
-            total: 3
-        },
-        {
-            name: 'Infrastructure',
-            skills: ['Load Balancing', 'Task Scheduling', 'Message Queues', 'Service Mesh'],
-            progress: 75,
-            solved: 3,
-            total: 4
-        },
-        {
-            name: 'Content & Media',
-            skills: ['CDN Design', 'Image Processing', 'Video Streaming', 'Content Delivery'],
-            progress: 33,
-            solved: 1,
-            total: 3
-        }
-    ];
+    return () => clearTimeout(timeoutId);
+  }, [editedUser]);
 
-    const recentActivity = [
-        { type: 'solved', question: 'Design a Distributed Cache', date: '2024-03-05', score: 92 },
-        { type: 'solved', question: 'Design Flash Sale System', date: '2024-03-03', score: 88 },
-        { type: 'achievement', title: 'Streak Master', date: '2024-03-01' },
-        { type: 'solved', question: 'Design Load Balancer', date: '2024-02-28', score: 95 },
-        { type: 'solved', question: 'Design Image Service', date: '2024-02-25', score: 87 },
-    ];
+  // Handle profile picture upload
+  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+      }
 
-    return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <div className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/"
-                                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
-                            >
-                                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                                <span className="font-medium">Back to Home</span>
-                            </Link>
-                            <div className="w-px h-6 bg-border" />
-                            <h1 className="text-lg font-black tracking-tight">Profile</h1>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={isEditing ? handleSaveProfile : () => setIsEditing(!isEditing)}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-medium transition-colors"
-                            >
-                                {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                                {isEditing ? 'Save Changes' : 'Edit Profile'}
-                            </button>
-                            <button
-                                onClick={() => signOut({ callbackUrl: '/' })}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl font-medium transition-colors"
-                                title="Sign Out"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">Sign Out</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image size should be less than 5MB', 'error');
+        return;
+      }
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="grid lg:grid-cols-12 gap-8">
-                    {/* Left Sidebar - Profile Info */}
-                    <div className="lg:col-span-4 space-y-6">
-                        {/* Profile Card */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-card border border-border rounded-3xl p-8 shadow-xl"
-                        >
-                            <div className="text-center">
-                                <AvatarUpload
-                                    currentImage={profileData.avatar}
-                                    onImageChange={handleAvatarChange}
-                                    isEditing={isEditing}
-                                />
+      // Convert to base64 for localStorage (in production, upload to cloud storage)
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditedUser(prev => ({
+          ...prev,
+          profilePicture: reader.result as string
+        }));
+        showToast('Profile picture updated successfully!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-                                <h2 className="text-2xl font-black tracking-tight mb-2">
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={profileData.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
-                                            className="bg-transparent border-b-2 border-primary/30 focus:border-primary outline-none text-2xl font-black tracking-tight"
-                                        />
-                                    ) : (
-                                        profileData.name
-                                    )}
-                                </h2>
-                                <p className="text-muted-foreground font-medium mb-4">
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={profileData.role}
-                                            onChange={(e) => handleInputChange('role', e.target.value)}
-                                            className="bg-transparent border-b border-primary/30 focus:border-primary outline-none w-full"
-                                        />
-                                    ) : (
-                                        profileData.role
-                                    )}
-                                </p>
+  // Handle cover image upload
+  const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+      }
 
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-6">
-                                    <MapPin className="w-4 h-4" />
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={profileData.location}
-                                            onChange={(e) => handleInputChange('location', e.target.value)}
-                                            className="bg-transparent border-b border-primary/30 focus:border-primary outline-none"
-                                        />
-                                    ) : (
-                                        <span>{profileData.location}</span>
-                                    )}
-                                </div>
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image size should be less than 5MB', 'error');
+        return;
+      }
 
-                                {/* Social Links */}
-                                <div className="flex justify-center gap-3 mb-6">
-                                    {[
-                                        { icon: <Github className="w-4 h-4" />, key: 'github', label: 'GitHub' },
-                                        { icon: <Twitter className="w-4 h-4" />, key: 'twitter', label: 'Twitter' },
-                                        { icon: <Linkedin className="w-4 h-4" />, key: 'linkedin', label: 'LinkedIn' },
-                                        { icon: <Globe className="w-4 h-4" />, key: 'website', label: 'Website' },
-                                    ].map((social, index) => (
-                                        <div key={index} className="relative group">
-                                            {isEditing ? (
-                                                <input
-                                                    type="url"
-                                                    value={profileData.socialLinks[social.key as keyof typeof profileData.socialLinks]}
-                                                    onChange={(e) => handleSocialLinkChange(social.key, e.target.value)}
-                                                    placeholder={`${social.label} URL`}
-                                                    className="w-20 p-2 bg-muted/50 border border-border rounded-xl text-xs focus:border-primary outline-none"
-                                                />
-                                            ) : (
-                                                <a
-                                                    href={profileData.socialLinks[social.key as keyof typeof profileData.socialLinks]}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="p-2 bg-muted/50 hover:bg-primary/10 rounded-xl transition-colors group"
-                                                    title={social.label}
-                                                >
-                                                    <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                                                        {social.icon}
-                                                    </div>
-                                                </a>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+      // Convert to base64 for localStorage (in production, upload to cloud storage)
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditedUser(prev => ({
+          ...prev,
+          coverImage: reader.result as string
+        }));
+        showToast('Cover image updated successfully!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-                                {/* Bio */}
-                                <div className="text-left">
-                                    <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3">About</h3>
-                                    {isEditing ? (
-                                        <textarea
-                                            value={profileData.bio}
-                                            onChange={(e) => handleInputChange('bio', e.target.value)}
-                                            rows={4}
-                                            className="w-full text-sm bg-muted/30 border border-border rounded-xl p-3 focus:border-primary outline-none resize-none"
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            {profileData.bio}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
+  // Remove profile picture
+  const handleRemoveProfilePicture = () => {
+    setEditedUser(prev => ({
+      ...prev,
+      profilePicture: null
+    }));
+    showToast('Profile picture removed', 'info');
+  };
 
-                        {/* Quick Stats */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-card border border-border rounded-3xl p-6 shadow-xl"
-                        >
-                            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6">Quick Stats</h3>
-                            <div className="space-y-4">
-                                {[
-                                    { label: 'Problems Solved', value: progress?.totalSolved || 0, max: 29, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
-                                    { label: 'Current Streak', value: progress?.currentStreak || 0, max: null, icon: <Zap className="w-4 h-4 text-yellow-500" /> },
-                                    { label: 'Achievements', value: achievements.filter(a => a.unlocked).length, max: achievements.length, icon: <Trophy className="w-4 h-4 text-purple-500" /> },
-                                    { label: 'Avg Score', value: 89, max: 100, icon: <Star className="w-4 h-4 text-blue-500" /> },
-                                ].map((stat, index) => (
-                                    <div key={index} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            {stat.icon}
-                                            <span className="text-sm font-medium text-foreground">{stat.label}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg font-black text-foreground">{stat.value}</span>
-                                            {stat.max && <span className="text-sm text-muted-foreground">/ {stat.max}</span>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
+  // Remove cover image
+  const handleRemoveCoverImage = () => {
+    setEditedUser(prev => ({
+      ...prev,
+      coverImage: null
+    }));
+    showToast('Cover image removed', 'info');
+  };
 
-                    {/* Main Content */}
-                    <div className="lg:col-span-8 space-y-6">
-                        {/* Tab Navigation */}
-                        <div className="flex gap-2 p-1 bg-muted/30 rounded-2xl">
-                            {[
-                                { id: 'overview' as const, label: 'Overview', icon: <User className="w-4 h-4" /> },
-                                { id: 'activity' as const, label: 'Activity', icon: <Calendar className="w-4 h-4" /> },
-                                { id: 'achievements' as const, label: 'Achievements', icon: <Trophy className="w-4 h-4" /> },
-                                { id: 'settings' as const, label: 'Settings', icon: <Settings className="w-4 h-4" /> },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={clsx(
-                                        'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all',
-                                        activeTab === tab.id
-                                            ? 'bg-card text-foreground shadow-lg border border-border'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                    )}
-                                >
-                                    {tab.icon}
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+  const handleLogout = () => {
+    // Only clear auth token, keep user profile data
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('sessionToken');
+    
+    // Show toast
+    showToast('Logging out...', 'info');
+    
+    // Redirect to login page
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 1000);
+  };
 
-                        {/* Tab Content */}
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-6"
-                        >
-                            {activeTab === 'overview' && (
-                                <>
-                                    {/* Activity Tracker */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-xl font-black tracking-tight">Activity Tracker</h3>
-                                            <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-500 rounded-full border border-green-500/20">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest">Active System Designer</span>
-                                            </div>
-                                        </div>
-                                        <ActivityGrid />
-                                    </div>
+  const getRarityColor = (rarity: string) => {
+    const colors = {
+      common: 'border-gray-300 bg-gray-50',
+      rare: 'border-blue-300 bg-blue-50',
+      epic: 'border-purple-300 bg-purple-50',
+      legendary: 'border-yellow-300 bg-yellow-50'
+    };
+    return colors[rarity as keyof typeof colors] || colors.common;
+  };
 
-                                    {/* Progress Overview */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <h3 className="text-xl font-black tracking-tight mb-6">Progress Overview</h3>
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            {skillCategories.map((category, index) => (
-                                                <div key={index} className="p-6 bg-muted/30 rounded-2xl border border-border/50">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h4 className="font-black text-foreground">{category.name}</h4>
-                                                        <span className="text-sm font-bold text-muted-foreground">
-                                                            {category.solved}/{category.total}
-                                                        </span>
-                                                    </div>
-                                                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-4">
-                                                        <motion.div
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${category.progress}%` }}
-                                                            className="h-full bg-primary rounded-full"
-                                                            transition={{ delay: index * 0.1 }}
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {category.skills.map((skill, skillIndex) => (
-                                                            <span
-                                                                key={skillIndex}
-                                                                className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-lg font-medium"
-                                                            >
-                                                                {skill}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-green-500';
+    if (percentage >= 70) return 'bg-blue-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    return 'bg-gray-400';
+  };
 
-                                    {/* Recent Activity */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <h3 className="text-xl font-black tracking-tight mb-6">Recent Activity</h3>
-                                        <div className="space-y-4">
-                                            {recentActivity.map((activity, index) => (
-                                                <div key={index} className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl">
-                                                    <div className={clsx(
-                                                        'w-10 h-10 rounded-xl flex items-center justify-center',
-                                                        activity.type === 'solved' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'
-                                                    )}>
-                                                        {activity.type === 'solved' ? <CheckCircle2 className="w-5 h-5" /> : <Trophy className="w-5 h-5" />}
-                                                    </div>
-                                                    <div className="flex-grow">
-                                                        <p className="font-bold text-foreground">
-                                                            {activity.type === 'solved' ? 'Solved' : 'Unlocked'} {activity.type === 'solved' ? activity.question : activity.title}
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">{activity.date}</p>
-                                                    </div>
-                                                    {activity.type === 'solved' && activity.score && (
-                                                        <div className="text-right">
-                                                            <p className="font-black text-foreground">{activity.score}%</p>
-                                                            <p className="text-xs text-muted-foreground">Score</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+        duration={3000}
+      />
 
-                            {activeTab === 'activity' && (
-                                <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-xl font-black tracking-tight">Activity Calendar</h3>
-                                        <span className="text-sm text-muted-foreground">Last 12 months</span>
-                                    </div>
-                                    <ActivityGrid />
+      {/* Hidden file inputs */}
+      <input
+        ref={profilePictureInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleProfilePictureChange}
+        className="hidden"
+      />
+      <input
+        ref={coverImageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleCoverImageChange}
+        className="hidden"
+      />
 
-                                    {/* Activity Stats */}
-                                    <div className="grid md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-border">
-                                        <div className="text-center">
-                                            <div className="text-3xl font-black text-primary mb-2">{progress?.totalSolved || 0}</div>
-                                            <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Total Solved</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-3xl font-black text-green-500 mb-2">{progress?.currentStreak || 0}</div>
-                                            <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Current Streak</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-3xl font-black text-yellow-500 mb-2">{progress?.longestStreak || 0}</div>
-                                            <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Best Streak</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'achievements' && (
-                                <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                    <h3 className="text-xl font-black tracking-tight mb-6">Achievements</h3>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                        {achievements.map((achievement, index) => (
-                                            <motion.div
-                                                key={achievement.id}
-                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                className={clsx(
-                                                    'p-6 rounded-2xl border transition-all',
-                                                    achievement.unlocked
-                                                        ? 'bg-primary/5 border-primary/20 text-foreground'
-                                                        : 'bg-muted/30 border-border/50 text-muted-foreground'
-                                                )}
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className={clsx(
-                                                        'p-3 rounded-xl',
-                                                        achievement.unlocked
-                                                            ? 'bg-primary/10 text-primary'
-                                                            : 'bg-muted text-muted-foreground'
-                                                    )}>
-                                                        {achievement.icon}
-                                                    </div>
-                                                    <div className="flex-grow">
-                                                        <h4 className="font-black mb-1">{achievement.title}</h4>
-                                                        <p className="text-sm mb-2">{achievement.description}</p>
-                                                        {achievement.unlocked && achievement.date && (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Unlocked on {new Date(achievement.date).toLocaleDateString()}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    {achievement.unlocked && (
-                                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'settings' && (
-                                <div className="space-y-6">
-                                    {/* Account Settings */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <h3 className="text-xl font-black tracking-tight mb-6">Account Settings</h3>
-                                        <div className="space-y-6">
-                                            <div className="grid md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="block text-sm font-bold text-foreground mb-2">Full Name</label>
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={session.user?.name || ''}
-                                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-bold text-foreground mb-2">Email</label>
-                                                    <input
-                                                        type="email"
-                                                        defaultValue={session.user?.email || ''}
-                                                        className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-bold text-foreground mb-2">Bio</label>
-                                                <textarea
-                                                    rows={4}
-                                                    defaultValue="Passionate system architect with 8+ years of experience designing scalable distributed systems."
-                                                    className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Privacy Settings */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <h3 className="text-xl font-black tracking-tight mb-6">Privacy & Notifications</h3>
-                                        <div className="space-y-4">
-                                            {[
-                                                { label: 'Make profile public', description: 'Allow others to view your profile and progress' },
-                                                { label: 'Email notifications', description: 'Receive emails about new challenges and achievements' },
-                                                { label: 'Weekly progress reports', description: 'Get weekly summaries of your learning progress' },
-                                                { label: 'Achievement notifications', description: 'Get notified when you unlock new achievements' },
-                                            ].map((setting, index) => (
-                                                <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
-                                                    <div>
-                                                        <p className="font-bold text-foreground">{setting.label}</p>
-                                                        <p className="text-sm text-muted-foreground">{setting.description}</p>
-                                                    </div>
-                                                    <button className="w-12 h-6 bg-primary rounded-full relative transition-colors">
-                                                        <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 transition-transform" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Account Actions */}
-                                    <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-                                        <h3 className="text-xl font-black tracking-tight mb-6">Account Actions</h3>
-                                        <div className="space-y-4">
-                                            {/* Change Password */}
-                                            <button className="w-full flex items-center justify-between p-5 bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-2xl group transition-all">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2 bg-muted rounded-lg group-hover:scale-110 transition-transform">
-                                                        <Lock className="w-4 h-4 text-muted-foreground" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <p className="font-bold text-foreground">Change Password</p>
-                                                        <p className="text-sm text-muted-foreground">Update your account password</p>
-                                                    </div>
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                            </button>
-
-                                            {/* Export Data */}
-                                            <button className="w-full flex items-center justify-between p-5 bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-2xl group transition-all">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2 bg-muted rounded-lg group-hover:scale-110 transition-transform">
-                                                        <Shield className="w-4 h-4 text-muted-foreground" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <p className="font-bold text-foreground">Export Data</p>
-                                                        <p className="text-sm text-muted-foreground">Download your progress and data</p>
-                                                    </div>
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                            </button>
-
-                                            {/* Logout Button */}
-                                            <button
-                                                onClick={() => signOut({ callbackUrl: '/' })}
-                                                className="w-full flex items-center justify-between p-5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-2xl group transition-all"
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2 bg-red-500/20 rounded-lg group-hover:scale-110 transition-transform">
-                                                        <LogOut className="w-4 h-4 text-red-500" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <p className="font-bold text-red-500">Sign Out</p>
-                                                        <p className="text-sm text-muted-foreground">End your current session</p>
-                                                    </div>
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-red-500/70 group-hover:translate-x-1 transition-transform" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </motion.div>
-                    </div>
-                </div>
-            </div>
+      {/* Theme Toggle - Fixed Position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
+      {/* Cover Image & Profile Header */}
+      <div className="relative">
+        {/* Cover Image with Upload */}
+        <div className="h-48 relative overflow-hidden">
+          {editedUser.coverImage ? (
+            <>
+              <img 
+                src={String(editedUser.coverImage)} 
+                alt="Cover" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/20" />
+            </>
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20" />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-600/10" />
+            </>
+          )}
+          
+          {/* Cover Image Actions */}
+          <div className="absolute top-4 right-16 flex gap-2">
+            <button 
+              onClick={() => coverImageInputRef.current?.click()}
+              className="bg-card/80 hover:bg-card text-foreground p-2 rounded-lg transition-all border border-border/50 backdrop-blur-sm"
+              title="Change cover image"
+            >
+              <Camera size={20} />
+            </button>
+            {editedUser.coverImage && (
+              <button 
+                onClick={handleRemoveCoverImage}
+                className="bg-red-500/80 hover:bg-red-500 text-white p-2 rounded-lg transition-all backdrop-blur-sm"
+                title="Remove cover image"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
         </div>
-    );
+
+        {/* Profile Info */}
+        <div className="relative px-6 pb-6">
+          <div className="flex flex-col md:flex-row md:items-end md:space-x-6">
+            {/* Profile Picture */}
+            <div className="relative -mt-16 mb-4 md:mb-0">
+              <div className="w-32 h-32 rounded-full border-4 border-card shadow-lg overflow-hidden bg-muted flex items-center justify-center">
+                {(editedUser.profilePicture || editedUser.oauthAvatar) ? (
+                  <img 
+                    src={String(editedUser.profilePicture || editedUser.oauthAvatar)} 
+                    alt={editedUser.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User size={48} className="text-muted-foreground" />
+                )}
+              </div>
+              
+              {/* Profile Picture Actions */}
+              <div className="absolute bottom-0 right-0 flex gap-1">
+                <button 
+                  onClick={() => profilePictureInputRef.current?.click()}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-full shadow-lg transition-colors"
+                  title="Change profile picture"
+                >
+                  <Camera size={16} />
+                </button>
+                {editedUser.profilePicture && (
+                  <button 
+                    onClick={handleRemoveProfilePicture}
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors"
+                    title="Remove profile picture"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              
+              {/* OAuth Provider Badge */}
+              {editedUser.oauthProvider && (
+                <div className="absolute -bottom-1 -left-1 bg-card border border-border rounded-full p-1">
+                  {editedUser.oauthProvider === 'google' && (
+                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">G</span>
+                    </div>
+                  )}
+                  {editedUser.oauthProvider === 'github' && (
+                    <Github size={16} className="text-foreground" />
+                  )}
+                  {editedUser.oauthProvider === 'linkedin' && (
+                    <Linkedin size={16} className="text-blue-600" />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* User Info */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1">
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">{editedUser.name}</h1>
+                    <p className="text-muted-foreground">@{editedUser.username}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors"
+                  >
+                    <LogOut size={16} />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                  <Link
+                    href="/profile/settings"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </Link>
+                </div>
+              </div>
+
+              {/* Bio Section */}
+              <p className="text-foreground/80 mb-4 max-w-2xl">
+                {editedUser.bio || (
+                  <span className="italic text-muted-foreground">
+                    No bio yet. Add one in settings to tell others about yourself.
+                  </span>
+                )}
+              </p>
+
+              {/* Location and Details */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
+                <div className="flex items-center gap-1">
+                  <MapPin size={16} />
+                  {editedUser.location || 'No location set'}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar size={16} />
+                  Joined {new Date(editedUser.joinedDate).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                  })}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Mail size={16} />
+                  {editedUser.email}
+                </div>
+              </div>
+
+              {/* Social Accounts - Read Only */}
+              <div className="flex items-center gap-3 flex-wrap">
+                  {editedUser.socialAccounts
+                    .filter(account => account.isLinked && account.profileUrl && account.isPublic)
+                    .map((account) => (
+                      <a
+                        key={account.platform}
+                        href={account.profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors group"
+                        title={`${account.displayName || account.username} on ${getPlatformDisplayName(account.platform)}`}
+                      >
+                        {getSocialIcon(account.platform, 20)}
+                        {account.isVerified && (
+                          <ShieldCheck size={12} className="text-green-500" />
+                        )}
+                        <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </a>
+                    ))}
+                  
+                  {/* Show empty state if no social accounts are linked */}
+                  {editedUser.socialAccounts.filter(account => account.isLinked && account.profileUrl).length === 0 && (
+                    <div className="flex items-center gap-2 text-muted-foreground/60">
+                      <LinkIcon size={16} />
+                      <span className="text-sm italic">No social accounts linked</span>
+                    </div>
+                  )}
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="px-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <motion.div 
+            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Target className="text-green-600" size={24} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.problemsSolved}</p>
+                <p className="text-sm text-gray-600">Problems Solved</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Trophy className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.points}</p>
+                <p className="text-sm text-gray-600">Total Points</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Zap className="text-orange-600" size={24} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.currentStreak}</p>
+                <p className="text-sm text-gray-600">Current Streak</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Award className="text-purple-600" size={24} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.rank}</p>
+                <p className="text-sm text-gray-600">Current Rank</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Activity Heatmap */}
+          <ActivityHeatmap 
+            data={mockActivityData} 
+            year={new Date(editedUser.joinedDate).getFullYear()} 
+            startDate={editedUser.joinedDate}
+          />
+
+          {/* Progress by Category */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Progress by Category</h3>
+            <div className="space-y-4">
+              {mockProgress.map((category, index) => {
+                const percentage = (category.solved / category.total) * 100;
+                return (
+                  <motion.div 
+                    key={category.category}
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-700">{category.category}</span>
+                      <div className="text-sm text-gray-600">
+                        {category.solved}/{category.total} ({Math.round(percentage)}%)
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <motion.div 
+                        className={`h-2 rounded-full ${getProgressColor(percentage)}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percentage}%` }}
+                        transition={{ duration: 1, delay: index * 0.1 }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Average Score: {category.avgScore}%
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-8">
+          {/* Achievements */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Achievements</h3>
+            <div className="space-y-3">
+              {mockAchievements.map((achievement, index) => (
+                <motion.div
+                  key={achievement.id}
+                  className={`p-3 rounded-lg border-2 ${getRarityColor(achievement.rarity)}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">{achievement.icon}</div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-800">{achievement.name}</h4>
+                      <p className="text-sm text-gray-600">{achievement.description}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-gray-500">
+                          {new Date(achievement.unlockedAt).toLocaleDateString()}
+                        </span>
+                        <span className="text-xs font-semibold text-blue-600">
+                          +{achievement.points} pts
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+            
+            {/* Check if user has any activity */}
+            {editedUser.stats.problemsSolved > 0 ? (
+              <div className="space-y-3">
+                {/* This will be populated with real activity data from backend */}
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">Activity will appear here</p>
+                    <p className="text-xs text-muted-foreground">When you solve problems</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                  <Clock size={24} className="text-muted-foreground" />
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">No Activity Yet</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your recent problem-solving activity will appear here
+                </p>
+                <Link
+                  href="/questions"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                >
+                  <Plus size={16} />
+                  Start Solving Problems
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

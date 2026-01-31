@@ -1,150 +1,158 @@
-import { Problem } from '@/types';
+export interface Problem {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  requirements: string[];
+  constraints: string[];
+  estimatedTime: string;
+  points: number;
+}
 
 export const PROBLEMS: Problem[] = [
-    // EASY
-    {
-        id: '1',
-        title: 'Design a URL Shortener',
-        description: 'Design a scalable URL shortening service like TinyURL.',
-        difficulty: 'Easy',
-        category: 'Web Services',
-        requirements: ['Shorten long URLs', 'Redirect short URLs', 'High availability'],
-        constraints: ['100M new URLs per month', 'Read:Write ratio 100:1']
-    },
-    {
-        id: '2',
-        title: 'Design a Pastebin',
-        description: 'Design a service where users can store and share text snippets.',
-        difficulty: 'Easy',
-        category: 'Web Services',
-        requirements: ['Upload text', 'Generate unique link', 'Expiration support'],
-        constraints: ['10M daily active users', '10GB storage per day']
-    },
-    {
-        id: '3',
-        title: 'Design a Web Crawler',
-        description: 'Design a system that crawls the web and indexes pages.',
-        difficulty: 'Easy',
-        category: 'Data Systems',
-        requirements: ['Crawl pages', 'Handle duplicates', 'Scalable'],
-        constraints: ['1B pages per month', 'Respect robots.txt']
-    },
-
-    // MEDIUM
-    {
-        id: '4',
-        title: 'Design a Rate Limiter',
-        description: 'Design a system to limit the number of requests a user can send to an API.',
-        difficulty: 'Medium',
-        category: 'Infrastructure',
-        requirements: ['Limit requests per user', 'Low latency', 'Distributed support'],
-        constraints: ['1M RPS', 'Highly available']
-    },
-    {
-        id: '5',
-        title: 'Design Instagram',
-        description: 'Design a photo-sharing service with feed and follow features.',
-        difficulty: 'Medium',
-        category: 'Social Media',
-        requirements: ['Upload photos', 'Follow users', 'Generate news feed'],
-        constraints: ['500M users', '1M photo uploads per day']
-    },
-    {
-        id: '6',
-        title: 'Design Dropbox',
-        description: 'Design a file storage and synchronization service.',
-        difficulty: 'Medium',
-        category: 'Storage Systems',
-        requirements: ['Upload/Download files', 'Sync across devices', 'File versioning'],
-        constraints: ['50M users', '10PB total storage']
-    },
-    {
-        id: '7',
-        title: 'Design a Notification System',
-        description: 'Design a system to send push notifications, emails, and SMS.',
-        difficulty: 'Medium',
-        category: 'Communication',
-        requirements: ['Support multiple channels', 'Priority queues', 'Rate limiting'],
-        constraints: ['10M notifications per day', 'Low latency']
-    },
-
-    // HARD
-    {
-        id: '8',
-        title: 'Design WhatsApp',
-        description: 'Design a real-time messaging application.',
-        difficulty: 'Hard',
-        category: 'Communication',
-        requirements: ['1-on-1 messaging', 'Group chats', 'Sent/Delivered/Read receipts'],
-        constraints: ['500M daily active users', 'Low latency']
-    },
-    {
-        id: '9',
-        title: 'Design an Ad Click Aggregator',
-        description: 'Design a system to count ad clicks in real-time for billing.',
-        difficulty: 'Hard',
-        category: 'Data Systems',
-        requirements: ['Real-time counting', 'Exactly-once processing', 'Scalable'],
-        constraints: ['10B clicks per day', 'Fault tolerant']
-    },
-    {
-        id: '10',
-        title: 'Design YouTube',
-        description: 'Design a video-sharing platform with streaming and search.',
-        difficulty: 'Hard',
-        category: 'Media',
-        requirements: ['Upload videos', 'Stream videos', 'Search and recommendations'],
-        constraints: ['2B users', '500 hours of video uploaded per minute']
-    },
-    {
-        id: '11',
-        title: 'Design Uber',
-        description: 'Design a ride-sharing service with real-time location tracking.',
-        difficulty: 'Hard',
-        category: 'Real-time Systems',
-        requirements: ['Match riders with drivers', 'Real-time tracking', 'Payment processing'],
-        constraints: ['100M users', '1M active drivers']
-    },
-    {
-        id: '12',
-        title: 'Design a Distributed Message Queue',
-        description: 'Design a system like Kafka for high-throughput messaging.',
-        difficulty: 'Hard',
-        category: 'Infrastructure',
-        requirements: ['Persistent storage', 'Pub/Sub model', 'High throughput'],
-        constraints: ['100TB data per day', 'Zero data loss']
-    },
-    {
-        id: '13',
-        title: 'Design a Search Engine',
-        description: 'Design a system like Google Search with indexing and ranking.',
-        difficulty: 'Hard',
-        category: 'Data Systems',
-        requirements: ['Index billions of pages', 'Fast search results', 'Ranking algorithm'],
-        constraints: ['100k queries per second', 'Petabytes of data']
-    },
-    {
-        id: '14',
-        title: 'Design a Stock Exchange',
-        description: 'Design a high-frequency trading platform.',
-        difficulty: 'Hard',
-        category: 'FinTech',
-        requirements: ['Order matching', 'Low latency (<1ms)', 'Audit logging'],
-        constraints: ['1M orders per second', 'Strict consistency']
-    },
-    {
-        id: '15',
-        title: 'Design a Proximity Service',
-        description: 'Design a system like Yelp or Google Maps to find nearby places.',
-        difficulty: 'Medium',
-        category: 'Geo Systems',
-        requirements: ['Search nearby places', 'Add/Update places', 'Scalable'],
-        constraints: ['100M places', '50k RPS']
-    }
+  {
+    id: 'url-shortener',
+    title: 'Design a URL Shortener',
+    description: 'Design a URL shortening service like bit.ly or tinyurl.com that can handle millions of URLs and redirects.',
+    difficulty: 'Medium',
+    category: 'System Design',
+    requirements: [
+      'Shorten long URLs to 6-8 character codes',
+      'Redirect users to original URL when accessing short URL',
+      'Handle 100M URLs shortened per day',
+      'Support custom aliases for premium users',
+      'Provide analytics on click counts and geographic data'
+    ],
+    constraints: [
+      '100:1 read to write ratio',
+      '500M new URLs per month',
+      'URL shortening should be fast (<100ms)',
+      'Redirects should be fast (<100ms)',
+      '99.9% availability required'
+    ],
+    estimatedTime: '45-60 minutes',
+    points: 150
+  },
+  {
+    id: 'chat-system',
+    title: 'Design WhatsApp',
+    description: 'Design a real-time messaging system that can handle billions of users and messages with high availability.',
+    difficulty: 'Hard',
+    category: 'Distributed Systems',
+    requirements: [
+      'Send and receive messages in real-time',
+      'Support group chats with up to 256 members',
+      'Message delivery confirmation (sent, delivered, read)',
+      'Support multimedia messages (images, videos, files)',
+      'User presence indicators (online, last seen)',
+      'Message history and search functionality'
+    ],
+    constraints: [
+      '2 billion active users',
+      '100 billion messages per day',
+      'Messages should be delivered within 100ms',
+      'Support for offline message delivery',
+      '99.99% availability required',
+      'End-to-end encryption for privacy'
+    ],
+    estimatedTime: '60-90 minutes',
+    points: 200
+  },
+  {
+    id: 'social-media-feed',
+    title: 'Design Twitter Feed',
+    description: 'Design a social media feed system that can generate personalized timelines for millions of users.',
+    difficulty: 'Hard',
+    category: 'Social Media',
+    requirements: [
+      'Users can post tweets (280 characters)',
+      'Users can follow other users',
+      'Generate personalized timeline for each user',
+      'Support likes, retweets, and replies',
+      'Real-time feed updates',
+      'Trending topics and hashtags'
+    ],
+    constraints: [
+      '500M active users',
+      '400M tweets per day',
+      'Timeline generation should be fast (<200ms)',
+      'Handle celebrity users with millions of followers',
+      '99.9% availability required'
+    ],
+    estimatedTime: '60-75 minutes',
+    points: 180
+  },
+  {
+    id: 'video-streaming',
+    title: 'Design YouTube',
+    description: 'Design a video streaming platform that can handle millions of video uploads and billions of views.',
+    difficulty: 'Hard',
+    category: 'Media & Content',
+    requirements: [
+      'Upload videos in various formats',
+      'Stream videos with different quality options',
+      'Search videos by title, description, tags',
+      'User subscriptions and notifications',
+      'Video recommendations',
+      'Comments and likes system'
+    ],
+    constraints: [
+      '2 billion logged-in users per month',
+      '500 hours of video uploaded every minute',
+      '1 billion hours watched daily',
+      'Support 4K video streaming',
+      'Global content delivery required'
+    ],
+    estimatedTime: '75-90 minutes',
+    points: 220
+  },
+  {
+    id: 'ride-sharing',
+    title: 'Design Uber',
+    description: 'Design a ride-sharing service that can match drivers with passengers in real-time.',
+    difficulty: 'Hard',
+    category: 'Location-Based Services',
+    requirements: [
+      'Match drivers with nearby passengers',
+      'Real-time location tracking',
+      'Fare calculation and payment processing',
+      'Trip history and ratings',
+      'Driver and passenger profiles',
+      'Surge pricing during high demand'
+    ],
+    constraints: [
+      '100M active users',
+      '15M trips per day',
+      'Location updates every 3 seconds',
+      'Matching should happen within 30 seconds',
+      '99.9% availability in major cities'
+    ],
+    estimatedTime: '60-75 minutes',
+    points: 190
+  },
+  {
+    id: 'search-engine',
+    title: 'Design Google Search',
+    description: 'Design a web search engine that can index billions of web pages and return relevant results quickly.',
+    difficulty: 'Hard',
+    category: 'Search & Discovery',
+    requirements: [
+      'Crawl and index billions of web pages',
+      'Return relevant search results in milliseconds',
+      'Handle billions of search queries per day',
+      'Support different types of content (text, images, videos)',
+      'Personalized search results',
+      'Auto-complete and spell correction'
+    ],
+    constraints: [
+      '60+ billion web pages to index',
+      '8.5 billion searches per day',
+      'Search results should load within 200ms',
+      'Handle 40,000 searches per second on average',
+      '99.99% availability required'
+    ],
+    estimatedTime: '90+ minutes',
+    points: 250
+  }
 ];
-
-// Helper to generate more problems if needed
-export const getProblems = () => {
-    // In a real app, this could fetch from an API or generate variations
-    return PROBLEMS;
-};

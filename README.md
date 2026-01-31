@@ -1,157 +1,218 @@
-# AI System Design Platform
+# AI System Design Learning Platform
 
-A comprehensive Next.js application for learning system design with interactive canvas, AI-powered feedback, and user authentication.
+An interactive platform for learning AI system design through drag-and-drop interfaces, ML-powered validation, and gamification.
 
-## Features
+## 🎯 Features
 
-- **Interactive Canvas**: Drag and drop system components (Load Balancers, Databases, Caches, etc.) using React Flow
-- **AI Evaluator**: Real-time analysis of your design against specific problem constraints using Google Gemini API
-- **Dynamic Problems**: Practice with different scenarios like "Design a URL Shortener" or "Design WhatsApp"
-- **User Authentication**: Secure login and user management with NextAuth
-- **Email Integration**: Contact forms and notifications via SendGrid, Resend, and Nodemailer
-- **Database Integration**: Data persistence with Supabase
-- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- **Smooth Animations**: Enhanced UX with Framer Motion
+### Core Functionality
+- **Drag & Drop Design Canvas**: Build system architectures by dragging components
+- **ML-Powered Validation**: AI evaluates your designs against best practices
+- **Real-time Feedback**: Get instant feedback on your design decisions
+- **Gamification**: Achievements, streaks, and progress tracking
+- **User Profiles**: Track your learning journey with GitHub-style activity graphs
 
-## Tech Stack
+### User Profile Features
+- Profile picture, name, and description
+- Activity tracker (contribution-style heatmap)
+- Progress overview by category
+- Recent activity feed
+- Achievements system with unlockable badges
+- Edit profile functionality
 
-- **Frontend**: Next.js 16.1.4 (App Router), React 19, Tailwind CSS 4, Lucide React
-- **State Management**: Zustand
-- **Canvas**: React Flow
-- **AI**: Google Generative AI (Gemini)
-- **Authentication**: NextAuth.js
-- **Database**: Supabase
-- **Email Services**: SendGrid, Resend, Nodemailer, EmailJS
-- **Animations**: Framer Motion
-- **Backend**: Next.js API Routes (Serverless)
-- **Language**: TypeScript
+### Design Validation
+- ML model evaluates architectural correctness
+- Test cases for each problem
+- Fun/motivational feedback based on performance
+- Solution marking and progress tracking
 
-## Getting Started
+## 🏗️ Tech Stack
+
+### Frontend
+- **Next.js 14** (App Router)
+- **React 18**
+- **TypeScript**
+- **Tailwind CSS**
+- **shadcn/ui** components
+- **React DnD** for drag and drop
+- **Recharts** for visualizations
+- **Framer Motion** for animations
+
+### Backend
+- **Node.js + Express**
+- **TypeScript**
+- **PostgreSQL** with Prisma ORM
+- **Redis** for caching
+- **JWT** authentication
+- **AWS S3** for image uploads
+
+### ML Validator
+- **Python FastAPI**
+- **TensorFlow/PyTorch**
+- **Graph Neural Networks** for architecture validation
+- **Rule-based validation engine**
+
+## 📁 Project Structure
+
+```
+ai-design-platform/
+├── frontend/                 # Next.js application
+│   ├── app/                 # App router pages
+│   ├── components/          # React components
+│   ├── lib/                 # Utilities and hooks
+│   └── public/              # Static assets
+├── backend/                 # Node.js API
+│   ├── src/
+│   │   ├── controllers/     # Route controllers
+│   │   ├── models/          # Database models
+│   │   ├── routes/          # API routes
+│   │   ├── middleware/      # Express middleware
+│   │   └── services/        # Business logic
+│   └── prisma/              # Database schema
+└── ml-validator/            # Python ML service
+    ├── models/              # Trained models
+    ├── validators/          # Validation logic
+    └── api/                 # FastAPI endpoints
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+ 
-- npm or yarn package manager
+- Node.js 18+
+- Python 3.9+
+- PostgreSQL 14+
+- Redis
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd ai-sysdes
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up Environment Variables:
-   Create a `.env.local` file in the root directory:
-   ```env
-   # AI Configuration
-   GEMINI_API_KEY=your_gemini_api_key
-   
-   # Authentication
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=http://localhost:3000
-   
-   # Database
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   
-   # Email Services (choose one or more)
-   SENDGRID_API_KEY=your_sendgrid_api_key
-   RESEND_API_KEY=your_resend_api_key
-   
-   # SMTP Configuration (for Nodemailer)
-   SMTP_HOST=your_smtp_host
-   SMTP_PORT=587
-   SMTP_USER=your_smtp_user
-   SMTP_PASS=your_smtp_password
-   ```
-
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open [http://localhost:3000](http://localhost:3000) with your browser.
-
-### Build for Production
-
+1. **Clone and setup**
 ```bash
-npm run build
-npm start
+git clone <repo-url>
+cd ai-design-platform
 ```
 
-## Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   │   └── ai-evaluator/  # AI evaluation endpoint
-│   ├── auth/              # Authentication pages
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── canvas/           # Design canvas components
-│   ├── ui/               # Reusable UI components
-│   └── auth/             # Authentication components
-├── lib/                  # Utilities and configurations
-│   ├── hooks/            # Custom React hooks
-│   ├── utils/            # Utility functions
-│   └── ai-prompt.ts      # AI prompt engineering
-└── types/                # TypeScript type definitions
+2. **Frontend Setup**
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-## Key Features Explained
+3. **Backend Setup**
+```bash
+cd backend
+npm install
+cp .env.example .env
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
 
-### Interactive Design Canvas
-- Drag and drop system components
-- Real-time connection drawing
-- Component configuration panels
-- Export/import design functionality
+4. **ML Validator Setup**
+```bash
+cd ml-validator
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
 
-### AI-Powered Evaluation
-- Context-aware design analysis
-- Best practices recommendations
-- Scalability assessments
-- Performance optimization suggestions
+### Environment Variables
 
-### User Management
-- Secure authentication with NextAuth
-- User profiles and preferences
-- Design history and favorites
-- Progress tracking
+**Frontend (.env.local)**
+```
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_ML_API_URL=http://localhost:8000
+```
 
-### Communication Features
-- Contact forms with multiple email providers
-- Automated notifications
-- User feedback collection
-- Support ticket system
+**Backend (.env)**
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/aidesign
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-secret-key
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_S3_BUCKET=your-bucket
+```
 
-## Deployment
+## 📱 Screenshots
 
-### AWS Deployment
-This application is optimized for AWS deployment using:
-- **AWS Amplify** or **Vercel** for hosting
-- **AWS Lambda** for serverless functions
-- **Amazon RDS** or **DynamoDB** for database
-- **AWS S3** for static assets
-- **CloudFront** for CDN
+[Screenshots will be added here]
 
-### Environment Configuration
-Ensure all environment variables are properly configured in your deployment platform.
+## 🎮 How to Use
 
-## Contributing
+1. **Sign up/Login** to create your profile
+2. **Choose a problem** from the problem library
+3. **Drag components** from the sidebar onto the canvas
+4. **Connect components** to build your architecture
+5. **Submit for validation** - ML model will evaluate your design
+6. **Get feedback** - Learn from mistakes or celebrate success
+7. **Track progress** on your profile page
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🏆 Achievement System
 
-## License
+- **First Design**: Complete your first system design
+- **Perfectionist**: Get 100% on 5 problems
+- **Speed Demon**: Complete a design in under 5 minutes
+- **Streak Master**: Maintain a 7-day streak
+- **Category Expert**: Complete all problems in a category
+- And many more!
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📊 Database Schema
+
+See `backend/prisma/schema.prisma` for detailed schema.
+
+Key models:
+- User
+- Problem
+- Solution
+- Achievement
+- Activity
+- Progress
+
+## 🤖 ML Validation
+
+The ML validator uses:
+- Graph Neural Networks to analyze architecture topology
+- Rule-based validators for best practices
+- Similarity matching with reference solutions
+- Component compatibility checking
+
+## 🔐 Security
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- Rate limiting on API endpoints
+- Input validation and sanitization
+- CORS configuration
+- SQL injection prevention with Prisma
+
+## 🚀 Deployment
+
+### Frontend (Vercel)
+```bash
+cd frontend
+vercel deploy
+```
+
+### Backend (Railway/Render)
+- Set environment variables
+- Connect to GitHub
+- Auto-deploy on push
+
+### ML Validator (AWS/GCP)
+- Dockerize the application
+- Deploy to container service
+- Set up load balancing
+
+## 📝 License
+
+MIT License
+
+## 🤝 Contributing
+
+Contributions welcome! Please read CONTRIBUTING.md first.
+
+## 📧 Contact
+
+For questions or feedback, open an issue on GitHub.

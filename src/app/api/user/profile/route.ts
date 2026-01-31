@@ -1,167 +1,127 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import { supabase } from '@/lib/supabase';
 
-// Interface for profile data
-interface ProfileData {
-    name: string;
-    role: string;
-    location?: string;
-    bio?: string;
-    avatar?: string;
-    socialLinks?: {
-        github?: string;
-        twitter?: string;
-        linkedin?: string;
-        website?: string;
-    };
-    updatedAt?: string;
+// GET user profile
+export async function GET(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const userId = searchParams.get('userId');
+        const username = searchParams.get('username');
+
+        if (!userId && !username) {
+            return NextResponse.json({ error: 'User ID or username required' }, { status: 400 });
+        }
+
+        let query = supabase
+            .from('users')
+            .select(`
+                id,
+                username,
+                display_name,
+                full_name,
+                bio,
+                profile_picture_url,
+                cover_image_url,
+                location,
+                company,
+                job_title,
+                experience_level,
+                github_url,
+                twitter_url,
+                linkedin_url,
+                website_url,
+                portfolio_url,
+                problems_solved,
+                total_submissions,
+                points,
+                streak_days,
+                max_streak,
+                last_activity_date,
+                public_profile,
+                show_stats,
+                created_at
+            `);
+
+        if (userId) {
+            query = query.eq('id', userId);
+        } else {
+            query = query.eq('username', username);
+        }
+
+        const { data, error } = await query.single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            }
+            throw error;
+        }
+
+        return NextResponse.json({ user: data });
+    } catch (error) {
+        console.error('Profile fetch error:', error);
+        return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    }
 }
 
-// Default profile for new users
-const defaultProfile: ProfileData = {
-    name: 'System Architect',
-    role: 'System Design Engineer',
-    location: '',
-    bio: '',
-    avatar: '',
-    socialLinks: {
-      github: '',
-      twitter: '',
-      linkedin: '',
-      website: ''
+// PUT update user profile
+export async function PUT(req: Request) {
+    try {
+        const body = await req.json();
+        const {
+            userId,
+            display_name,
+            bio,
+            profile_picture_url,
+            cover_image_url,
+            location,
+            company,
+            job_title,
+            experience_level,
+            github_url,
+            twitter_url,
+            linkedin_url,
+            website_url,
+            portfolio_url,
+            public_profile,
+            show_stats
+        } = body;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+        }
+
+        const updateData: any = {};
+        
+        // Only update provided fields
+        if (display_name !== undefined) updateData.display_name = display_name;
+        if (bio !== undefined) updateData.bio = bio;
+        if (profile_picture_url !== undefined) updateData.profile_picture_url = profile_picture_url;
+        if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url;
+        if (location !== undefined) updateData.location = location;
+        if (company !== undefined) updateData.company = company;
+        if (job_title !== undefined) updateData.job_title = job_title;
+        if (experience_level !== undefined) updateData.experience_level = experience_level;
+        if (github_url !== undefined) updateData.github_url = github_url;
+        if (twitter_url !== undefined) updateData.twitter_url = twitter_url;
+        if (linkedin_url !== undefined) updateData.linkedin_url = linkedin_url;
+        if (website_url !== undefined) updateData.website_url = website_url;
+        if (portfolio_url !== undefined) updateData.portfolio_url = portfolio_url;
+        if (public_profile !== undefined) updateData.public_profile = public_profile;
+        if (show_stats !== undefined) updateData.show_stats = show_stats;
+
+        const { data, error } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({ message: 'Profile updated successfully', user: data });
+    } catch (error) {
+        console.error('Profile update error:', error);
+        return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }
-};
-
-export async function GET() {
-  try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Fetch user profile from Supabase database
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, email, full_name, username, bio, location, avatar_url, github_url, twitter_url, linkedin_url, website_url, role, updated_at')
-      .eq('email', session.user.email)
-      .single();
-
-    if (error || !user) {
-      // Return default profile if user not found in database
-      return NextResponse.json({
-        ...defaultProfile,
-        name: session.user.name || defaultProfile.name
-      });
-    }
-
-    // Transform database fields to profile format
-    const profile: ProfileData = {
-      name: user.full_name || session.user.name || defaultProfile.name,
-      role: user.role || defaultProfile.role,
-      location: user.location || '',
-      bio: user.bio || '',
-      avatar: user.avatar_url || session.user.image || '',
-      socialLinks: {
-        github: user.github_url || '',
-        twitter: user.twitter_url || '',
-        linkedin: user.linkedin_url || '',
-        website: user.website_url || ''
-      },
-      updatedAt: user.updated_at
-    };
-
-    return NextResponse.json(profile);
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch profile' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const profileData = await request.json();
-    
-    // Validate required fields
-    if (!profileData.name || !profileData.role) {
-      return NextResponse.json({ error: 'Name and role are required' }, { status: 400 });
-    }
-
-    // First check if user exists in the database
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', session.user.email)
-      .single();
-
-    // Prepare update data
-    const updateData = {
-      full_name: profileData.name,
-      role: profileData.role,
-      bio: profileData.bio || '',
-      location: profileData.location || '',
-      avatar_url: profileData.avatar || '',
-      github_url: profileData.socialLinks?.github || '',
-      twitter_url: profileData.socialLinks?.twitter || '',
-      linkedin_url: profileData.socialLinks?.linkedin || '',
-      website_url: profileData.socialLinks?.website || '',
-      updated_at: new Date().toISOString()
-    };
-
-    let result;
-    
-    if (existingUser) {
-      // Update existing user
-      result = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('email', session.user.email)
-        .select()
-        .single();
-    } else {
-      // Create new user profile
-      result = await supabase
-        .from('users')
-        .insert({
-          email: session.user.email,
-          username: session.user.email?.split('@')[0] + Math.floor(Math.random() * 1000),
-          ...updateData
-        })
-        .select()
-        .single();
-    }
-
-    if (result.error) {
-      console.error('Database error:', result.error);
-      return NextResponse.json(
-        { error: 'Failed to update profile' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Profile updated successfully',
-      profile: {
-        ...profileData,
-        updatedAt: updateData.updated_at
-      }
-    });
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    );
-  }
 }
