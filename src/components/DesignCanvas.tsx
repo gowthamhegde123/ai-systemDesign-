@@ -16,6 +16,7 @@ import {
   Play,
   RotateCcw,
   Save
+} from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
 // System component types
