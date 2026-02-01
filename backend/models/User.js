@@ -1,86 +1,111 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static async create(username, email, password) {
+  // Create new user
+  static async create(userData) {
+    const { username, email, password, fullName } = userData;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.query(
-      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
-      [username, email, hashedPassword]
-    );
+    
+    const query = `
+      INSERT INTO users (username, email, password, full_name, email_verified, created_at)
+      VALUES ($1, $2, $3, $4, false, NOW())
+      RETURNING id, username, email, full_name, email_verified, created_at
+    `;
+    
+    const result = await pool.query(query, [username, email, hashedPassword, fullName]);
     return result.rows[0];
   }
 
-  static async findById(id) {
-    const result = await db.query(
-      'SELECT id, username, email, created_at, updated_at FROM users WHERE id = $1',
-      [id]
-    );
-    return result.rows[0];
-  }
-
+  // Find user by email
   static async findByEmail(email) {
-    const result = await db.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const query = 'SELECT * FROM users WHERE email = $1';
+    const result = await pool.query(query, [email]);
     return result.rows[0];
   }
 
-  static async findByUsername(username) {
-    const result = await db.query(
-      'SELECT * FROM users WHERE username = $1',
-      [username]
-    );
+  // Find user by ID
+  static async findById(id) {
+    const query = 'SELECT id, username, email, full_name, email_verified, created_at FROM users WHERE id = $1';
+    const result = await pool.query(query, [id]);
     return result.rows[0];
   }
 
-  static async findAll(limit = 100, offset = 0) {
-    const result = await db.query(
-      'SELECT id, username, email, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-      [limit, offset]
-    );
-    return result.rows;
-  }
-
-  static async update(id, updates) {
-    const fields = [];
-    const values = [];
-    let paramCount = 1;
-
-    Object.keys(updates).forEach(key => {
-      if (key !== 'id' && key !== 'password') {
-        fields.push(`${key} = $${paramCount}`);
-        values.push(updates[key]);
-        paramCount++;
-      }
-    });
-
-    if (updates.password) {
-      const hashedPassword = await bcrypt.hash(updates.password, 10);
-      fields.push(`password = $${paramCount}`);
-      values.push(hashedPassword);
-      paramCount++;
-    }
-
-    fields.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(id);
-
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING id, username, email, updated_at`;
-    const result = await db.query(query, values);
-    return result.rows[0];
-  }
-
-  static async delete(id) {
-    const result = await db.query(
-      'DELETE FROM users WHERE id = $1 RETURNING id',
-      [id]
-    );
-    return result.rows[0];
-  }
-
-  static async comparePassword(plainPassword, hashedPassword) {
+  // Verify password
+  static async verifyPassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  // Set verification token
+  static async setVerificationToken(userId, token, expiresAt) {
+    const query = `
+      UPDATE users 
+      SET verification_token = $1, verification_token_expires = $2
+      WHERE id = $3
+    `;
+    await pool.query(query, [token, expiresAt, userId]);
+  }
+
+  // Verify email
+  static async verifyEmail(token) {
+    const query = `
+      UPDATE users 
+      SET email_verified = true, verification_token = NULL, verification_token_expires = NULL
+      WHERE verification_token = $1 AND verification_token_expires > NOW()
+      RETURNING id, username, email, email_verified
+    `;
+    const result = await pool.query(query, [token]);
+    return result.rows[0];
+  }
+
+  // Set OTP for password reset
+  static async setPasswordResetOTP(email, otp, expiresAt) {
+    const query = `
+      UPDATE users 
+      SET reset_otp = $1, reset_otp_expires = $2
+      WHERE email = $3
+      RETURNING id, email
+    `;
+    const result = await pool.query(query, [otp, expiresAt, email]);
+    return result.rows[0];
+  }
+
+  // Verify OTP
+  static async verifyOTP(email, otp) {
+    const query = `
+      SELECT id, email, reset_otp, reset_otp_expires 
+      FROM users 
+      WHERE email = $1 AND reset_otp = $2 AND reset_otp_expires > NOW()
+    `;
+    const result = await pool.query(query, [email, otp]);
+    return result.rows[0];
+  }
+
+  // Reset password
+  static async resetPassword(email, newPassword) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const query = `
+      UPDATE users 
+      SET password = $1, reset_otp = NULL, reset_otp_expires = NULL
+      WHERE email = $2
+      RETURNING id, email
+    `;
+    const result = await pool.query(query, [hashedPassword, email]);
+    return result.rows[0];
+  }
+
+  // Check if email exists
+  static async emailExists(email) {
+    const query = 'SELECT id FROM users WHERE email = $1';
+    const result = await pool.query(query, [email]);
+    return result.rows.length > 0;
+  }
+
+  // Check if username exists
+  static async usernameExists(username) {
+    const query = 'SELECT id FROM users WHERE username = $1';
+    const result = await pool.query(query, [username]);
+    return result.rows.length > 0;
   }
 }
 

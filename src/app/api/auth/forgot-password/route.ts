@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
     try {
@@ -12,7 +15,7 @@ export async function POST(req: Request) {
         // Check if user exists
         const { data: user } = await supabase
             .from('users')
-            .select('id')
+            .select('id, username')
             .eq('email', email)
             .single();
 
@@ -32,49 +35,112 @@ export async function POST(req: Request) {
             expires_at: expiresAt.toISOString(),
         });
 
-        // Send email with Formspree (instant delivery)
-        if (process.env.FORMSPREE_FORM_ID) {
-            try {
-                const formspreeResponse = await fetch(`https://formspree.io/f/${process.env.FORMSPREE_FORM_ID}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        subject: 'Your Password Reset Code - SystemDesign.AI',
-                        message: `Your password reset code is: ${code}. This code will expire in 10 minutes.`,
-                        _replyto: email,
-                        _subject: 'Password Reset Code',
-                        _template: 'table',
-                        code: code,
-                        app_name: 'SystemDesign.AI'
-                    }),
-                });
+        // Send email with Resend
+        try {
+            const { data, error } = await resend.emails.send({
+                from: 'SystemDesign.AI <noreply@systemdesign.ai>',
+                to: [email],
+                subject: '🔐 Password Reset Code - SystemDesign.AI',
+                html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                            .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                            .otp-box { background: white; border: 2px dashed #f5576c; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px; }
+                            .otp-code { font-size: 32px; font-weight: bold; color: #f5576c; letter-spacing: 5px; }
+                            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+                            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🔐 Password Reset Request</h1>
+                            </div>
+                            <div class="content">
+                                <h2>Hi ${user.username || 'there'},</h2>
+                                <p>We received a request to reset your password. Use the code below to proceed:</p>
+                                <div class="otp-box">
+                                    <p style="margin: 0; color: #666; font-size: 14px;">Your Reset Code</p>
+                                    <div class="otp-code">${code}</div>
+                                </div>
+                                <div class="warning">
+                                    <strong>⚠️ Important:</strong>
+                                    <ul style="margin: 10px 0;">
+                                        <li>This code is valid for <strong>10 minutes</strong></li>
+                                        <li>Do not share this code with anyone</li>
+                                        <li>If you didn't request this, please ignore this email</li>
+                                    </ul>
+                                </div>
+                                <p>Enter this code on the password reset page to continue.</p>
+                            </div>
+                            <div class="footer">
+                                <p>&copy; ${new Date().getFullYear()} SystemDesign.AI. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `,
+            });
 
-                if (formspreeResponse.ok) {
-                    console.log('Email sent successfully via Formspree');
-                } else {
-                    console.error('Formspree email failed:', await formspreeResponse.text());
-                    console.log('Reset code for development:', code);
+            if (error) {
+                console.error('Resend error:', error);
+                
+                // Check if it's a domain verification error
+                if (error.message?.includes('verify a domain') || error.statusCode === 403) {
+                    console.log('⚠️ Resend requires domain verification to send to other emails');
+                    console.log('📧 For testing, only hegde0579@gmail.com can receive emails');
+                    console.log('🔑 Reset code for development:', code);
+                    
+                    // In development, return the code so user can still test
+                    if (process.env.NODE_ENV === 'development') {
+                        return NextResponse.json({ 
+                            message: 'Reset code generated. Note: Resend free tier only sends to hegde0579@gmail.com. Check console for code.',
+                            devCode: code,
+                            success: true,
+                            warning: 'Email service requires domain verification. Using development mode.'
+                        });
+                    }
                 }
-            } catch (emailError) {
-                console.error('Formspree request failed:', emailError);
-                console.log('Reset code for development:', code);
+                
+                // In development, still return the code
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('Reset code for development:', code);
+                    return NextResponse.json({ 
+                        message: 'Email service error, but code generated', 
+                        devCode: code,
+                        success: true
+                    });
+                }
+                throw error;
             }
-        } else {
-            console.warn('FORMSPREE_FORM_ID missing. Reset code logged to console:', code);
-            // For development - also return code in response (remove in production!)
+
+            console.log('✅ Password reset email sent successfully via Resend');
+            console.log('Email ID:', data?.id);
+            
+            return NextResponse.json({ 
+                message: 'Reset code sent to your email',
+                success: true
+            });
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            
+            // In development, log the code
             if (process.env.NODE_ENV === 'development') {
+                console.log('Reset code for development:', code);
                 return NextResponse.json({ 
-                    message: 'Reset code generated (check console for code)', 
-                    devCode: code, // Only in development
+                    message: 'Email failed but code generated (check console)', 
+                    devCode: code,
                     success: true
                 });
             }
+            
+            throw emailError;
         }
-
-        return NextResponse.json({ message: 'Reset code sent' });
     } catch (error) {
         console.error('Forgot password error:', error);
         return NextResponse.json({ error: 'Failed to process password reset request.' }, { status: 500 });

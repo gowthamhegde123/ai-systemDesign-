@@ -5,7 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const errorHandler = require('./middleware/errorHandler');
 const { getLeaderboard } = require('./controllers/submissionController');
