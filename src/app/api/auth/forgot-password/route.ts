@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
     try {
         const { email } = await req.json();
@@ -34,6 +32,9 @@ export async function POST(req: Request) {
             code,
             expires_at: expiresAt.toISOString(),
         });
+
+        // Initialize Resend inside the function to avoid build-time errors
+        const resend = new Resend(process.env.RESEND_API_KEY);
 
         // Send email with Resend
         try {
