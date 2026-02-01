@@ -36,6 +36,8 @@ import ActivityHeatmap from '@/components/ActivityHeatmap';
 import ThemeToggle from '@/components/ThemeToggle';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { RankCard } from '@/components/UserRankBadge';
+import { LearningPath } from '@/components/LearningPath';
 
 // Enhanced user data structure with OAuth and social accounts
 const mockUser = {
@@ -334,19 +336,19 @@ export default function ProfilePage() {
 
   const getRarityColor = (rarity: string) => {
     const colors = {
-      common: 'border-gray-300 bg-gray-50',
-      rare: 'border-blue-300 bg-blue-50',
-      epic: 'border-purple-300 bg-purple-50',
-      legendary: 'border-yellow-300 bg-yellow-50'
+      common: 'border-border bg-muted/30',
+      rare: 'border-blue-500/30 bg-blue-500/5',
+      epic: 'border-purple-500/30 bg-purple-500/5',
+      legendary: 'border-yellow-500/30 bg-yellow-500/5'
     };
     return colors[rarity as keyof typeof colors] || colors.common;
   };
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 90) return 'bg-green-500';
-    if (percentage >= 70) return 'bg-blue-500';
+    if (percentage >= 70) return 'bg-primary';
     if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-gray-400';
+    return 'bg-muted-foreground';
   };
 
   return (
@@ -568,82 +570,104 @@ export default function ProfilePage() {
 
       {/* Stats Cards */}
       <div className="px-6 mb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <motion.div 
-            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Target className="text-green-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.problemsSolved}</p>
-                <p className="text-sm text-gray-600">Problems Solved</p>
-              </div>
-            </div>
-          </motion.div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Rank Card - Takes 1 column */}
+          <div className="lg:col-span-1">
+            <RankCard 
+              points={mockUser.stats.points}
+              problemsSolved={mockUser.stats.problemsSolved}
+              globalRank={1247}
+            />
+          </div>
 
-          <motion.div 
-            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Trophy className="text-blue-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.points}</p>
-                <p className="text-sm text-gray-600">Total Points</p>
-              </div>
-            </div>
-          </motion.div>
+          {/* Stats Grid and Activity - Takes 2 columns */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div 
+                className="bg-card rounded-xl p-4 shadow-sm border border-border"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Target className="text-green-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{mockUser.stats.problemsSolved}</p>
+                    <p className="text-sm text-muted-foreground">Problems Solved</p>
+                  </div>
+                </div>
+              </motion.div>
 
-          <motion.div 
-            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Zap className="text-orange-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.currentStreak}</p>
-                <p className="text-sm text-gray-600">Current Streak</p>
-              </div>
-            </div>
-          </motion.div>
+              <motion.div 
+                className="bg-card rounded-xl p-4 shadow-sm border border-border"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Trophy className="text-primary" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{mockUser.stats.points}</p>
+                    <p className="text-sm text-muted-foreground">Total Points</p>
+                  </div>
+                </div>
+              </motion.div>
 
-          <motion.div 
-            className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Award className="text-purple-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{mockUser.stats.rank}</p>
-                <p className="text-sm text-gray-600">Current Rank</p>
-              </div>
+              <motion.div 
+                className="bg-card rounded-xl p-4 shadow-sm border border-border"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <Zap className="text-orange-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{mockUser.stats.currentStreak}</p>
+                    <p className="text-sm text-muted-foreground">Current Streak</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="bg-card rounded-xl p-4 shadow-sm border border-border"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <Award className="text-purple-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{mockUser.stats.rank}</p>
+                    <p className="text-sm text-muted-foreground">Current Rank</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+
+            {/* Activity Heatmap - Compact Version */}
+            <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
+              <ActivityHeatmap 
+                data={mockActivityData} 
+                year={new Date(editedUser.joinedDate).getFullYear()} 
+                startDate={editedUser.joinedDate}
+              />
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Learning Path Section */}
+      <div className="px-6 mb-8">
+        <LearningPath problemsSolved={mockUser.stats.problemsSolved} />
       </div>
 
       <div className="px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Activity Heatmap */}
-          <ActivityHeatmap 
-            data={mockActivityData} 
-            year={new Date(editedUser.joinedDate).getFullYear()} 
-            startDate={editedUser.joinedDate}
-          />
-
           {/* Progress by Category */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Progress by Category</h3>
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+            <h3 className="text-lg font-bold text-foreground mb-4">Progress by Category</h3>
             <div className="space-y-4">
               {mockProgress.map((category, index) => {
                 const percentage = (category.solved / category.total) * 100;
@@ -656,12 +680,12 @@ export default function ProfilePage() {
                     transition={{ delay: index * 0.1 }}
                   >
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">{category.category}</span>
-                      <div className="text-sm text-gray-600">
+                      <span className="font-medium text-foreground">{category.category}</span>
+                      <div className="text-sm text-muted-foreground">
                         {category.solved}/{category.total} ({Math.round(percentage)}%)
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <motion.div 
                         className={`h-2 rounded-full ${getProgressColor(percentage)}`}
                         initial={{ width: 0 }}
@@ -669,7 +693,7 @@ export default function ProfilePage() {
                         transition={{ duration: 1, delay: index * 0.1 }}
                       />
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       Average Score: {category.avgScore}%
                     </div>
                   </motion.div>
@@ -682,13 +706,13 @@ export default function ProfilePage() {
         {/* Right Column */}
         <div className="space-y-8">
           {/* Achievements */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Achievements</h3>
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+            <h3 className="text-lg font-bold text-foreground mb-4">Recent Achievements</h3>
             <div className="space-y-3">
               {mockAchievements.map((achievement, index) => (
                 <motion.div
                   key={achievement.id}
-                  className={`p-3 rounded-lg border-2 ${getRarityColor(achievement.rarity)}`}
+                  className={`p-3 rounded-xl border-2 ${getRarityColor(achievement.rarity)}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -697,13 +721,13 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{achievement.icon}</div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{achievement.name}</h4>
-                      <p className="text-sm text-gray-600">{achievement.description}</p>
+                      <h4 className="font-bold text-foreground">{achievement.name}</h4>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(achievement.unlockedAt).toLocaleDateString()}
                         </span>
-                        <span className="text-xs font-semibold text-blue-600">
+                        <span className="text-xs font-bold text-primary">
                           +{achievement.points} pts
                         </span>
                       </div>
@@ -715,8 +739,8 @@ export default function ProfilePage() {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+            <h3 className="text-lg font-bold text-foreground mb-4">Recent Activity</h3>
             
             {/* Check if user has any activity */}
             {editedUser.stats.problemsSolved > 0 ? (

@@ -13,11 +13,17 @@ import { clsx } from 'clsx';
 import { useSession } from 'next-auth/react';
 import { ProfileDashboard } from '@/components/ProfileDashboard';
 import { User as UserIcon } from 'lucide-react';
+import { PricingSection } from '@/components/PricingSection';
+import { UserRankBadge, getRankByPoints } from '@/components/UserRankBadge';
 
 export default function Home() {
   const { data: session } = useSession();
   const [selectedProblemId, setSelectedProblemId] = useState<string>(PROBLEMS[0].id);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Mock user stats - in production, fetch from API
+  const userPoints = 0; // Start at 0 for new users - will be fetched from user profile
+  const userRank = getRankByPoints(userPoints);
 
   const selectedProblem = useMemo(() =>
     PROBLEMS.find(p => p.id === selectedProblemId),
@@ -45,6 +51,7 @@ export default function Home() {
               { name: 'Features', id: 'features' },
               { name: 'Questions', href: '/questions' },
               { name: 'Challenges', id: 'challenges' },
+              { name: 'Pricing', id: 'pricing' },
               { name: 'About', id: 'about' }
             ].map((item) => (
               <button
@@ -79,13 +86,15 @@ export default function Home() {
                   )}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Profile</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">
+                    {userRank.name}
+                  </p>
                   <div className="flex items-center gap-2">
                     <p className="text-[9px] font-bold text-muted-foreground leading-none truncate max-w-[80px]">
                       {session.user?.name || 'Architect'}
                     </p>
                     <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md border border-accent/20">
-                      42
+                      {userPoints}
                     </span>
                   </div>
                 </div>
@@ -521,6 +530,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* Footer */}
       <footer className="py-12 border-t border-border bg-muted/30">

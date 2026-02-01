@@ -86,11 +86,11 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
 
   const getIntensityColor = (level: number) => {
     const colors = [
-      'bg-gray-100', // 0 - no activity
-      'bg-green-200', // 1 - low activity
-      'bg-green-300', // 2 - medium activity
-      'bg-green-500', // 3 - high activity
-      'bg-green-700'  // 4 - very high activity
+      'bg-muted', // 0 - no activity
+      'bg-primary/20', // 1 - low activity
+      'bg-primary/40', // 2 - medium activity
+      'bg-primary/60', // 3 - high activity
+      'bg-primary'  // 4 - very high activity
     ];
     return colors[level] || colors[0];
   };
@@ -140,13 +140,13 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-foreground">
           {totalContributions} problems solved in {year}
         </h3>
-        <div className="text-sm text-gray-600">
-          Current streak: <span className="font-semibold text-green-600">{currentStreak} days</span>
+        <div className="text-xs text-muted-foreground">
+          Streak: <span className="font-bold text-primary">{currentStreak} days</span>
         </div>
       </div>
 
@@ -156,7 +156,7 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
           <div className="flex mb-2">
             <div className="w-8"></div> {/* Space for weekday labels */}
             {months.map((month, index) => (
-              <div key={month} className="text-xs text-gray-500 text-center" style={{ width: '52px' }}>
+              <div key={month} className="text-[10px] text-muted-foreground text-center" style={{ width: '52px' }}>
                 {month}
               </div>
             ))}
@@ -167,7 +167,7 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
             {/* Weekday labels */}
             <div className="flex flex-col mr-2">
               {weekdays.map((day, index) => (
-                <div key={day} className="h-3 flex items-center text-xs text-gray-500 mb-1">
+                <div key={day} className="h-3 flex items-center text-[10px] text-muted-foreground mb-1">
                   {index % 2 === 1 ? day : ''}
                 </div>
               ))}
@@ -181,7 +181,7 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
                     <motion.div
                       key={`${weekIndex}-${dayIndex}`}
                       className={`
-                        w-3 h-3 rounded-sm cursor-pointer border border-gray-200
+                        w-3 h-3 rounded-sm cursor-pointer border border-border
                         ${day.date ? getIntensityColor(day.level) : 'bg-transparent border-transparent'}
                       `}
                       whileHover={{ scale: day.date ? 1.2 : 1 }}
@@ -196,19 +196,19 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-3">
+            <div className="text-[10px] text-muted-foreground">
               Less
             </div>
             <div className="flex items-center gap-1">
               {[0, 1, 2, 3, 4].map((level) => (
                 <div
                   key={level}
-                  className={`w-3 h-3 rounded-sm border border-gray-200 ${getIntensityColor(level)}`}
+                  className={`w-3 h-3 rounded-sm border border-border ${getIntensityColor(level)}`}
                 />
               ))}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-[10px] text-muted-foreground">
               More
             </div>
           </div>
@@ -218,16 +218,16 @@ export default function ActivityHeatmap({ data, year = 2024, startDate }: Activi
       {/* Tooltip */}
       {hoveredDay && (
         <div
-          className="fixed z-50 bg-gray-800 text-white text-xs rounded px-2 py-1 pointer-events-none"
+          className="fixed z-50 bg-popover text-popover-foreground text-xs rounded-lg px-3 py-2 pointer-events-none shadow-lg border border-border"
           style={{
             left: mousePosition.x + 10,
             top: mousePosition.y - 30,
           }}
         >
-          <div className="font-semibold">
+          <div className="font-bold">
             {hoveredDay.count} problems solved
           </div>
-          <div className="text-gray-300">
+          <div className="text-muted-foreground text-[10px]">
             {new Date(hoveredDay.date).toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
