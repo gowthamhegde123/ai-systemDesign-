@@ -12,12 +12,14 @@ import {
   ChevronLeft, Send,
   Trophy, Sparkles, BrainCircuit,
   ArrowRight, Info, Clock, Users, Code, Target, Lightbulb, Wrench, MessageSquareText,
-  Timer, Rocket, Star, PartyPopper, Zap, BarChart3
+  Timer, Rocket, Star, PartyPopper, Zap, BarChart3,
+  Volume2, VolumeX, Ghost, Flame, AlertTriangle, X, Map, BookOpen
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { getSolution, ProblemSolution } from '@/lib/data/solutions';
-import { BookOpen, Map, X } from 'lucide-react';
+import React from 'react';
 
 // Convert SystemDesignQuestion to Problem format for the store
 const convertToProblem = (question: SystemDesignQuestion) => ({
@@ -62,6 +64,75 @@ export default function SystemDesignCanvas() {
     efficiencyScore: number;
     optimizationScore: number;
   } | null>(null);
+
+  const [roasting, setRoasting] = useState(false);
+  const [roastResult, setRoastResult] = useState<{
+    rating: number;
+    verdict: 'ROAST' | 'BOAST';
+    commentary: string;
+    meme_keyword: string;
+    meme_url?: string;
+  } | null>(null);
+  const [showEmptyWarning, setShowEmptyWarning] = useState(false);
+
+  // Audio Refs
+  const successAudio = React.useRef<HTMLAudioElement | null>(null);
+  const failAudio = React.useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Initialize Audio
+    successAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); // Fanfare
+    failAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3'); // Wah Wah
+  }, []);
+
+  const playSound = (verdict: 'ROAST' | 'BOAST') => {
+    if (verdict === 'BOAST') {
+      successAudio.current?.play().catch(e => console.log('Audio play error', e));
+    } else {
+      failAudio.current?.play().catch(e => console.log('Audio play error', e));
+    }
+  };
+
+  const handleRoast = async () => {
+    if (nodes.length === 0) {
+      setShowEmptyWarning(true);
+      return;
+    }
+    setRoasting(true);
+    setRoastResult(null);
+
+    try {
+      // Capture Canvas
+      const element = document.body;
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: true
+      });
+      const imageBase64 = canvas.toDataURL('image/png');
+
+      // Send to AI
+      const response = await fetch('/api/roast-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageBase64 })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.details || data.error || 'Unknown error');
+
+      setRoastResult(data);
+      playSound(data.verdict);
+
+    } catch (error) {
+      console.error('Roast failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`The Roast Machine broke: ${errorMessage}`);
+    } finally {
+      setRoasting(false);
+    }
+  };
 
   useEffect(() => {
     if (params.id) {
@@ -304,6 +375,18 @@ export default function SystemDesignCanvas() {
               View Solution
             </motion.button>
           )}
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleRoast}
+            disabled={roasting}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 rounded-lg disabled:opacity-50 transition-all text-xs font-bold border border-pink-500/20 shadow-sm"
+          >
+            {roasting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            Roast My Design
+          </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -518,6 +601,125 @@ export default function SystemDesignCanvas() {
         {/* Right Panel: Canvas */}
         <div className="flex-grow relative bg-background">
           <DesignCanvas />
+
+          {/* Roast Result Overlay */}
+          <AnimatePresence>
+            {roastResult && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.5, opacity: 0, rotate: 10 }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] bg-card/95 backdrop-blur-3xl border-2 border-border shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-3xl p-8 z-[100] overflow-hidden"
+              >
+                <div className={clsx(
+                  "absolute top-0 left-0 w-full h-2",
+                  roastResult.verdict === 'BOAST' ? "bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400" : "bg-gradient-to-r from-red-600 via-pink-600 to-red-600"
+                )} />
+
+                <button
+                  onClick={() => setRoastResult(null)}
+                  className="absolute top-4 right-4 p-2 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 opacity-50" />
+                </button>
+
+                <div className="text-center mb-6">
+                  <motion.div
+                    initial={{ y: -20 }}
+                    animate={{ y: 0 }}
+                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted/50 text-[10px] font-black uppercase tracking-widest mb-4"
+                  >
+                    {roastResult.verdict === 'BOAST' ? (
+                      <>
+                        <Sparkles className="w-3 h-3 text-yellow-500" />
+                        <span className="text-yellow-500">Design Masterpiece</span>
+                      </>
+                    ) : (
+                      <>
+                        <Flame className="w-3 h-3 text-red-500" />
+                        <span className="text-red-500">Roast Mode Active</span>
+                      </>
+                    )}
+                  </motion.div>
+
+                  <h2 className="text-4xl font-black mb-2 tracking-tighter">
+                    {roastResult.verdict === 'BOAST' ? "ABSOLUTE CINEMA" : "EMOTIONAL DAMAGE"}
+                  </h2>
+                  <div className="flex items-center justify-center gap-2 text-6xl font-black font-mono">
+                    <span className={roastResult.rating >= 7 ? "text-green-500" : "text-red-500"}>
+                      {roastResult.rating}
+                    </span>
+                    <span className="text-2xl text-muted-foreground self-end mb-2">/10</span>
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 p-6 rounded-2xl border border-border/50 mb-6 text-center relative">
+                  <Ghost className="w-48 h-48 absolute -top-20 -left-10 opacity-[0.03] rotate-12" />
+                  <p className="text-lg font-medium leading-relaxed italic relative z-10">
+                    &ldquo;{roastResult.commentary}&rdquo;
+                  </p>
+                </div>
+
+                {roastResult.meme_url ? (
+                  <div className="rounded-2xl overflow-hidden border border-border/50 shadow-inner bg-black/5 aspect-video flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={roastResult.meme_url}
+                      alt={roastResult.meme_keyword}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-48 bg-muted rounded-2xl flex items-center justify-center text-muted-foreground text-sm font-bold">
+                    (Meme Generator Out of Ink)
+                  </div>
+                )}
+
+                <div className="mt-6 text-center text-[10px] text-muted-foreground uppercase tracking-widest opacity-50">
+                  {roastResult.meme_keyword}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Empty Canvas Warning Overlay */}
+          <AnimatePresence>
+            {showEmptyWarning && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[110] flex items-center justify-center bg-background/60 backdrop-blur-md"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 20 }}
+                  className="max-w-md w-full bg-card border-2 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] rounded-3xl p-8 text-center relative overflow-hidden"
+                >
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-yellow-500" />
+
+                  <div className="w-20 h-20 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-yellow-500/20">
+                    <AlertTriangle className="w-10 h-10 text-yellow-500" />
+                  </div>
+
+                  <h3 className="text-2xl font-black mb-3">Canvas is Empty!</h3>
+                  <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
+                    The AI Critic can&apos;t roast a blank screen! Add some components to your design first and then prepare for the heat. 🔥
+                  </p>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowEmptyWarning(false)}
+                    className="w-full py-4 bg-yellow-500 hover:bg-yellow-600 text-black font-black rounded-xl transition-colors shadow-lg shadow-yellow-500/20"
+                  >
+                    Got it, Chief!
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Guided Solution Overlay */}
           <AnimatePresence>

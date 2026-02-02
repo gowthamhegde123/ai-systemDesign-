@@ -40,4 +40,15 @@ export interface AIAnalysisResult {
   feedback: string;
   score: number;
   suggestions?: string[];
+  test_results?: {
+    name: string;
+    passed: boolean;
+    description: string;
+  }[];
+  detailed_results?: {
+    scalability: number;
+    reliability: number;
+    correctness: number;
+    performance: number;
+  };
 }

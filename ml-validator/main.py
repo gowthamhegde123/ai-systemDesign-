@@ -9,7 +9,17 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
 import logging
-from datetime import datetime
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env.local'))
+
+# Configure Gemini
+GOOGLE_API_KEY = os.getenv("GOOGLE_GENERATIVE_AI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -115,25 +125,148 @@ COMPONENT_TYPES = {
 # Problem definitions
 PROBLEMS = {
     'url-shortener': {
-        'title': 'Design a URL Shortener',
+        'title': 'Design a URL Shortener (TinyURL)',
+        'description': 'Design a URL shortening service like bit.ly. Functional: Generate short aliases, redirect. Non-Functional: High availability, low latency, 10k writes/sec.',
+        'min_score': 70,
         'required_components': ['api-gateway', 'web-server', 'database', 'cache'],
         'optional_components': ['load-balancer', 'cdn', 'security'],
-        'min_score': 70,
-        'description': 'Design a URL shortening service like bit.ly'
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'The "Celebrity Tweet": A single URL gets 1 million hits in 1 minute.',
+                'evaluation': 'Does the user include a Cache (Redis/Memcached)?'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'Database Exhaustion: 500 million URLs are stored.',
+                'evaluation': 'Does the user mention Database Sharding or NoSQL?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Collision Test: Two users generate a short link at the exact same millisecond.',
+                'evaluation': 'How is the unique ID generated? (Snowflake ID, Base62, etc.)'
+            }
+        ]
     },
     'chat-system': {
-        'title': 'Design a Chat System',
+        'title': 'Design a Chat System (WhatsApp/Slack)',
+        'description': 'Design a real-time messaging system. Functional: 1v1 chat, Group chat. Non-Functional: Low latency, Persistent storage.',
+        'min_score': 75,
         'required_components': ['api-gateway', 'web-server', 'database', 'message-queue'],
         'optional_components': ['load-balancer', 'cache', 'security'],
-        'min_score': 75,
-        'description': 'Design a real-time messaging system'
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'Real-time User Experience.',
+                'evaluation': 'Does the system use WebSockets or Long Polling for immediate message delivery?'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'User goes offline and comes back.',
+                'evaluation': 'Are messages queued/stored reliably to be delivered when user is back online?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Group Chat with 1000 users.',
+                'evaluation': 'Does the system handle fan-out messages efficiently?'
+            }
+        ]
     },
-    'social-media': {
-        'title': 'Design a Social Media Feed',
+    'social-media-feed': {
+        'title': 'Design a Social Media Feed (Twitter/Instagram)',
+        'description': 'Design a scalable social media platform. Functional: Post tweet, View feed. Non-Functional: Eventual consistency allowed, fast read, heavy read ratio.',
+        'min_score': 80,
         'required_components': ['api-gateway', 'load-balancer', 'web-server', 'database', 'cache'],
         'optional_components': ['cdn', 'message-queue', 'security'],
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'Justin Bieber posts a photo (Viral Content).',
+                'evaluation': 'Is a CDN used for media? Is the post metadata cached?'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'Feed Generation Latency.',
+                'evaluation': 'Does the system pre-generate feeds (Fan-out on write) or generate on read?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Heavy Read Traffic.',
+                'evaluation': 'Are Read Replicas used for the database?'
+            }
+        ]
+    },
+    'video-streaming': {
+        'title': 'Design YouTube/Netflix',
+        'description': 'Design a video streaming platform. Functional: Upload, Transcode, Stream. Non-Functional: High throughput, low latency streaming.',
         'min_score': 80,
-        'description': 'Design a scalable social media platform'
+        'required_components': ['api-gateway', 'load-balancer', 'web-server', 'database', 'cdn', 'storage'],
+        'optional_components': ['message-queue', 'cache', 'security'],
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'Global Buffet: Users in Australia watching video hosted in US.',
+                'evaluation': 'Is a CDN used to serve video chunks from the edge?'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'Processing 4K Uploads.',
+                'evaluation': 'Is there a queue + transcoding workers pipeline (Async processing)?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Metadata Bottleneck.',
+                'evaluation': 'Is video metadata separated from the large video blobs? (Blob store vs SQL/NoSQL)'
+            }
+        ]
+    },
+    'ride-sharing': {
+        'title': 'Design Uber/Lyft',
+        'description': 'Design a ride-sharing service. Functional: Match driver/rider, location tracking. Non-Functional: High consistency for matching, real-time updates.',
+        'min_score': 85,
+        'required_components': ['api-gateway', 'load-balancer', 'web-server', 'database', 'cache', 'message-queue'],
+        'optional_components': ['security', 'geo-service'],
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'Geospatial Search: Find nearest 10 drivers.',
+                'evaluation': 'Does the design imply a QuadTree/Geohash index (usually via specialized DB or Service)?'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'Race Condition: Two riders book the same driver.',
+                'evaluation': 'Is there a locking mechanism or transactional consistency for bookings?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Real-time Location Updates.',
+                'evaluation': 'Does it use WebSockets/MQTT for driver location streams?'
+            }
+        ]
+    },
+    'search-engine': {
+        'title': 'Design Google Search',
+        'description': 'Design a web search engine. Functional: Crawl, Index, Search. Non-Functional: Huge scale, low latency search.',
+        'min_score': 85,
+        'required_components': ['api-gateway', 'web-server', 'database', 'cache', 'load-balancer'],
+        'optional_components': ['message-queue', 'worker'],
+        'test_cases': [
+            {
+                'id': 'TC-01',
+                'scenario': 'The Internet is Big: 50 Billion pages.',
+                'evaluation': 'Is the index sharded? (Document vs Term partitioning mentioned?)'
+            },
+            {
+                'id': 'TC-02',
+                'scenario': 'Freshness: News site changes content.',
+                'evaluation': 'Is there a crawler/updater pipeline distinct from the serving layer?'
+            },
+            {
+                'id': 'TC-03',
+                'scenario': 'Typeahead/Autocomplete latency.',
+                'evaluation': 'Is there a Trie or specialized prefix cache structure?'
+            }
+        ]
     }
 }
 
@@ -142,20 +275,119 @@ class DesignValidator:
     
     def __init__(self):
         self.max_score = 100
+        self.model = genai.GenerativeModel('gemini-pro') if GOOGLE_API_KEY else None
+
+    async def _validate_with_llm(self, design: DesignModel, problem: Dict = None) -> Optional[ValidationResult]:
+        """Validate design using Gemini LLM with Senior Staff Persona"""
+        if not self.model:
+            return None
+            
+        try:
+            # 1. Context Assembly
+            problem_title = problem['title'] if problem else f"System Design Problem ({design.problem_id})"
+            problem_desc = problem['description'] if problem else "Design a scalable system for this use case."
+            
+            # Format Test Cases
+            test_cases_text = ""
+            if problem and 'test_cases' in problem:
+                for tc in problem['test_cases']:
+                    test_cases_text += f"- **{tc['id']}**: {tc['scenario']} (Check: {tc['evaluation']})\n"
+            else:
+                # Fallback Generic Test Cases if problem ID not found in backend
+                test_cases_text = """
+                - **TC-01**: High Scalability. (Check: Is there a load balancer and caching?)
+                - **TC-02**: Single Point of Failure. (Check: Are critical components redundant?)
+                - **TC-03**: Data Consistency vs Availability. (Check: Did they choose the right DB strategy?)
+                """
+
+            # Format Design
+            components_list = ", ".join([f"{c.type}" for c in design.components])
+            component_properties = json.dumps([{"type": c.type, "id": c.id} for c in design.components])
+            connections_list = ", ".join([f"{c.from_component}->{c.to_component}" for c in design.connections])
+            
+            # 2. Construct Prompt
+            prompt = f"""
+            Role: You are a Senior Staff System Design Interviewer. Your task is to evaluate a user's proposed architecture for a specific system design problem.
+
+            Problem: {problem_title}
+            Description: {problem_desc}
+
+            User's Design:
+            - Components Used: {components_list}
+            - Full Component List: {component_properties}
+            - Connections: {connections_list}
+
+            Evaluation Framework:
+            1. Requirement Coverage: Did the user address the core functional requirements?
+            2. Component Appropriateness: Are the chosen technologies (Databases, Load Balancers, Caching) correct for the scale?
+            3. Scalability & Bottlenecks: Can the system handle high traffic? Where will it fail first?
+            4. Reliability: Is there a single point of failure?
+
+            The "Stress Scenarios" (Test Cases):
+            Please run the design through the following scenarios. For each, state PASS/FAIL and why.
+            {test_cases_text}
+
+            Output Format (Strict JSON):
+            {{
+                "analysis": "Brief breakdown of strengths and weaknesses (max 2-3 sentences).",
+                "test_case_results": [
+                    {{
+                        "name": "TC-01: [Scenario Name]",
+                        "passed": true/false,
+                        "description": "Explanation of why it passed or failed."
+                    }}
+                ],
+                "detailed_results": {{
+                    "scalability": <score 0-100>,
+                    "reliability": <score 0-100>,
+                    "completeness": <score 0-100>,
+                    "correctness": <score 0-100>
+                }},
+                "score": <overall_percentage 0-100>
+            }}
+            """
+            
+            # 3. Inference
+            response = await self.model.generate_content_async(prompt)
+            clean_text = response.text.replace('```json', '').replace('```', '').strip()
+            result_json = json.loads(clean_text)
+            
+            # 4. Parsing
+            return ValidationResult(
+                score=result_json.get('score', 0),
+                passed=result_json.get('score', 0) >= (problem.get('min_score', 70) if problem else 70),
+                feedback=result_json.get('analysis', "Evaluation complete."),
+                detailed_results=result_json.get('detailed_results', {}),
+                test_results=result_json.get('test_case_results', [])
+            )
+            
+        except Exception as e:
+            logger.error(f"LLM validation failed: {str(e)}")
+            return None
         
-    def validate_design(self, design: DesignModel, problem_id: str = None) -> ValidationResult:
+    async def validate_design(self, design: DesignModel, problem_id: str = None) -> ValidationResult:
         """Main validation method"""
         try:
             logger.info(f"Validating design with {len(design.components)} components")
             
-            # Initialize results
+            # Get problem requirements
+            problem = PROBLEMS.get(problem_id) if problem_id else None
+
+            # Try AI Validation first
+            if self.model:
+                try:
+                    ai_result = await self._validate_with_llm(design, problem)
+                    if ai_result:
+                        logger.info("AI Validation successful")
+                        return ai_result
+                except Exception as e:
+                    logger.warning(f"AI Validation failed, falling back to rules: {e}")
+            
+            # Initialize results for rule-based fallback
             total_score = 0
             test_results = []
             detailed_results = {}
-            
-            # Get problem requirements if specified
-            problem = PROBLEMS.get(problem_id) if problem_id else None
-            
+
             # Test 1: Required Components (25 points)
             component_score, component_tests = self._validate_required_components(
                 design, problem
@@ -427,7 +659,7 @@ async def validate_design(design: DesignModel):
     """Validate a system design"""
     try:
         logger.info(f"Received validation request for design with {len(design.components)} components")
-        result = validator.validate_design(design, design.problem_id)
+        result = await validator.validate_design(design, design.problem_id)
         logger.info(f"Validation completed with score: {result.score}")
         return result
     except Exception as e:
