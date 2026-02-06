@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   ArrowRight, Server, Zap,
   BrainCircuit, Globe, Layers, Trophy,
-  MousePointer2, Sparkles, ChevronRight
+  MousePointer2, Sparkles, ChevronRight, Github
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROBLEMS } from '@/lib/data/problems';
@@ -217,6 +217,142 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Learn System Design Section */}
+      <section className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse delay-700" />
+        </div>
+
+        <div className="container mx-auto relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-5xl mx-auto"
+          >
+            {/* Header */}
+            <div className="text-center mb-16">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6"
+              >
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-black uppercase tracking-widest text-primary">New Learning Path</span>
+              </motion.div>
+              <h2 className="text-5xl md:text-6xl font-black mb-6 tracking-tighter">
+                Master System Design
+                <br />
+                <span className="text-primary">From Zero to Hero</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Comprehensive learning path covering fundamentals to advanced concepts. Understand why system design is irreplaceable by AI.
+              </p>
+            </div>
+
+            {/* Feature Grid */}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 hover:shadow-2xl hover:scale-105 transition-all group"
+              >
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <BrainCircuit className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-black mb-3">10 Modules</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Structured learning from fundamentals to expert-level concepts with 40+ lessons
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 hover:shadow-2xl hover:scale-105 transition-all group"
+              >
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Trophy className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-black mb-3">6+ Hours</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  In-depth content covering databases, distributed systems, and more
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 hover:shadow-2xl hover:scale-105 transition-all group"
+              >
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Zap className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-black mb-3">AI vs Human</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Learn why system design requires human judgment that AI can't replace
+                </p>
+              </motion.div>
+            </div>
+
+            {/* Topics Preview */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 mb-12"
+            >
+              <h3 className="text-2xl font-black mb-6 text-center">What You'll Learn</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  'Core System Design Concepts',
+                  'Database Design & Scaling',
+                  'Distributed Systems & CAP Theorem',
+                  'Microservices Architecture',
+                  'High Availability & Reliability',
+                  'Performance Optimization',
+                  'Security Best Practices',
+                  'Real-Time Systems'
+                ].map((topic, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <span className="font-medium">{topic}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center"
+            >
+              <Link
+                href="/learn"
+                className="group inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-2xl shadow-primary/20 hover:scale-105 transition-all"
+              >
+                Start Learning Free
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <p className="text-sm text-muted-foreground mt-4">
+                No credit card required • 10 modules • 40+ lessons
+              </p>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -535,15 +671,83 @@ export default function Home() {
       <PricingSection />
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border bg-muted/30">
-        <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <BrainCircuit className="w-6 h-6 text-primary" />
-            <span className="text-xl font-black tracking-tighter">SystemDesign.AI</span>
+      <footer className="relative py-20 border-t border-border bg-gradient-to-b from-background to-muted/30 overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            {/* Brand Section */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center">
+                  <BrainCircuit className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-black tracking-tighter">SystemDesign.AI</span>
+              </div>
+              <p className="text-muted-foreground text-sm font-medium leading-relaxed">
+                Master system design through AI-powered practice and real-world challenges.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground mb-4">Platform</h3>
+              <ul className="space-y-3">
+                <li><Link href="/problems" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Problems</Link></li>
+                <li><Link href="/canvas" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Design Canvas</Link></li>
+                <li><Link href="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Profile</Link></li>
+                <li><Link href="/leaderboard" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Leaderboard</Link></li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground mb-4">Resources</h3>
+              <ul className="space-y-3">
+                <li><Link href="/learn" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Learn System Design</Link></li>
+                <li><Link href="/docs" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Documentation</Link></li>
+                <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Blog</Link></li>
+                <li><Link href="/tutorials" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Tutorials</Link></li>
+                <li><Link href="/community" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Community</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground mb-4">Company</h3>
+              <ul className="space-y-3">
+                <li><Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">About</Link></li>
+                <li><Link href="/pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Pricing</Link></li>
+                <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Contact</Link></li>
+                <li><Link href="/careers" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">Careers</Link></li>
+              </ul>
+            </div>
           </div>
-          <p className="text-muted-foreground font-medium text-sm">
-            © 2024 System Design AI. Built for the next generation of architects.
-          </p>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium">Privacy Policy</Link>
+              <Link href="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium">Terms of Service</Link>
+              <Link href="/cookies" className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium">Cookie Policy</Link>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-muted hover:bg-primary/10 flex items-center justify-center transition-colors group">
+                <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-muted hover:bg-primary/10 flex items-center justify-center transition-colors group">
+                <Github className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-muted hover:bg-primary/10 flex items-center justify-center transition-colors group">
+                <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
